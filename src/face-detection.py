@@ -2,11 +2,11 @@
 # coding: utf-8
 # uso: ./face-detection.py
 
-#############################################################################
-# Visión por Computador. Curso 2019/20.
+############################################################################
+# Visión por Computador. Curso 2019-20.
 # Proyecto final: detección de caras a partir de una red YOLO preentrenada.
 # Miguel Lentisco Ballesteros. Antonio Coín Castro.
-#############################################################################
+############################################################################
 
 #
 # LIBRERÍAS
@@ -32,11 +32,8 @@ from keras.preprocessing.image import load_img, img_to_array, ImageDataGenerator
 #
 
 N = 200                  # Número de clases
-EPOCHS = 50              # Épocas de entrenamiento
-BATCH_SIZE = 64          # Tamaño de cada batch de imágenes
-INPUT_SIZE = (224, 224)  # Dimensiones de las imágenes de entrada
 TAM = (10, 5)            # Tamaño del plot
-PATH = "./"
+PATH = "./"              # Directorio de trabajo
 
 #
 # FUNCIONES AUXILIARES
@@ -99,37 +96,8 @@ def load_data():
     return train, train_classes, test, test_classes
 
 #
-# GRÁFICAS DE EVOLUCIÓN Y ESTADÍSTICAS
+# ESTADÍSTICAS
 #
-
-def show_evolution(hist, name):
-    """Pinta dos gráficas: una con la evolución de la función de pérdida
-       en el conjunto de entrenamiento y en el de validación, y otra con la evolución
-       del accuracy en el conjunto de entrenamiento y en el de validación.
-        - hist: historial de entrenamiento del modelo.
-        - name: nombre del modelo."""
-
-    # Evolución de las funciones de pérdida
-    loss = hist.history['loss']
-    val_loss = hist.history['val_loss']
-    plt.figure(figsize = TAM)
-    plt.plot(loss)
-    plt.plot(val_loss)
-    plt.legend(["Training loss " + name, "Validation loss " + name])
-    plt.show()
-
-    wait()
-
-    # Evolución del accuracy
-    acc = hist.history[ACC_NAME]
-    val_acc = hist.history["val_" + ACC_NAME]
-    plt.figure(figsize = TAM)
-    plt.plot(acc)
-    plt.plot(val_acc)
-    plt.legend(["Training accuracy " + name, "Validation accuracy " + name])
-    plt.show()
-
-    wait()
 
 def show_stats(score, hist, name, show = True):
     """Muestra estadísticas de accuracy y loss y gráficas de evolución.
@@ -142,10 +110,6 @@ def show_stats(score, hist, name, show = True):
     print("Test loss:", score[0])
     print("Test accuracy:", score[1])
     print()
-
-    # Mostramos gráficas
-    if show:
-        show_evolution(hist, name)
 
 #
 # PREDICIÓN Y EVALUACIÓN
