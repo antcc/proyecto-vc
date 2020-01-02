@@ -14,26 +14,27 @@
 
 # Generales
 import numpy as np
+
+# Visualización
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
-# Keras y TensorFlow
+# Keras
 import keras
-import keras.utils as np_utils
-from tensorflow.compat.v1 import logging
-
-# Modelos y capas
-from keras.models import Model, Sequential
-
-# Lectura y preprocesamiento de datos
+from keras.models import load_model
 from keras.preprocessing.image import load_img, img_to_array, ImageDataGenerator
+
+# Utilidades
+from bbox import *
 
 #
 # PARÁMETROS GLOBALES
 #
 
-N = 200                  # Número de clases
-TAM = (10, 5)            # Tamaño del plot
-PATH = "./"              # Directorio de trabajo
+N = 61                    # Número de clases
+TAM = (10, 5)             # Tamaño del plot
+PATH = "../data/"         # Directorio de trabajo
+INPUT_SHAPE = (416, 416)  # Tamaño de las imágenes de entrada. Debe ser múltiplo de 32.
 
 #
 # FUNCIONES AUXILIARES
@@ -45,114 +46,98 @@ def wait():
     input("(Pulsa cualquier tecla para continuar...)")
 
 #
-# LECTURA Y MODIFICACIÓN DEL CONJUNTO DE IMÁGENES
+# LECTURA Y PREPROCESADO DE IMÁGENES
 #
 
-def read_im(names):
-    """Lee las imágenes cuyos nombres están especificados en un vector de entrada.
-       Devuelve las imágenes en un vector y sus clases en otro.
-        - names: vector con los nombres (ruta relativa) de las imágenes."""
+def preprocess_input(x):
+    """Realiza el preprocesamiento necesario para pasar cada imagen 'x'
+       por la red YOLOv3."""
 
-    classes = np.array([im.split('/')[0] for im in names])
-    vim = np.array([img_to_array(load_img(PATH + im, target_size = INPUT_SIZE))
-                    for im in names])
-
-    return vim, classes
-
-def load_data():
-    """Carga el conjunto de datos en 4 vectores: las imágenes de entrenamiento,
-       las clases de las imágenes de entrenamiento, las imágenes de test y las
-       clases de las imágenes de test.
-
-       Lee las imágenes y las clases de los ficheros 'train.txt' y 'test.txt'."""
-
-    # Cargamos los ficheros
-    train_images = np.loadtxt(PATH + "train.txt", dtype = str)
-    test_images = np.loadtxt(PATH + "test.txt", dtype = str)
-
-    # Leemos las imágenes
-    train, train_classes = read_im(train_images)
-    test, test_classes = read_im(test_images)
-
-    # Convertimos las clases a números enteros
-    unique_classes = np.unique(np.copy(train_classes))
-    for i in range(len(unique_classes)):
-      train_classes[train_classes == unique_classes[i]] = i
-      test_classes[test_classes == unique_classes[i]] = i
-
-    # Convertimos los vectores de clases en matrices binarias
-    train_classes = np_utils.to_categorical(train_classes, N)
-    test_classes = np_utils.to_categorical(test_classes, N)
-
-    # Barajamos los datos
-    train_perm = np.random.permutation(len(train))
-    train = train[train_perm]
-    train_classes = train_classes[train_perm]
-
-    test_perm = np.random.permutation(len(test))
-    test = test[test_perm]
-    test_classes = test_classes[test_perm]
-
-    return train, train_classes, test, test_classes
+    return x.astype(np.float32) / 255.0
 
 #
-# ESTADÍSTICAS
+# PREDICCIÓN
 #
 
-def show_stats(score, hist, name, show = True):
-    """Muestra estadísticas de accuracy y loss y gráficas de evolución.
-        - score: métricas de evaluación.
-        - hist: historial de entrenamiento.
-        - name: nombre del modelo.
-        - show: controla si se muestran gráficas con estadísticas."""
-
-    print("\n---------- " + name.upper() + " EVALUATION ----------")
-    print("Test loss:", score[0])
-    print("Test accuracy:", score[1])
-    print()
-
-#
-# PREDICIÓN Y EVALUACIÓN
-#
-
-def predict_gen(model, datagen, x):
-    """Predicción de etiquetas sobre un conjunto de imágenes.
+def predict(model, flow, l):
+    """Predicción de etiquetas sobre un conjunto de imágenes
+       a partir de un flujo de imágenes.
         - model: modelo a usar para predecir.
-        - datagen: generador de imágenes.
-        - x: conjunto de datos para predecir su clase."""
+        - flow: generador de imágenes.
+        - l: longitud del conjunto de imágenes."""
 
-    preds = model.predict_generator(datagen.flow(x,
-                                                 batch_size = 1,
-                                                 shuffle = False),
-                                    verbose = 1,
-                                    steps = len(x))
+    return model.predict_generator(flow, steps = l, verbose = 1)
 
-    return preds
+#
+# DETECCIÓN DE CARAS
+#
 
-def evaluate(model, x_test, y_test):
-    """Evaluar el modelo sobre el conjunto de test.
-        - model: modelo a usar para evaluar.
-        - x_test, y_test: datos de test."""
+def detect_one(yolo, filename):
+    """Realiza detección de caras en una imagen. Muestra las
+       regiones detectadas en la imagen original.
+        - yolo: modelo YOLOv3.
+        - filename: ruta relativa de la imagen."""
 
-    score = model.evaluate(x_test, y_test, verbose = 0)
+    # Leemos la imagen, guardando el tamaño original
+    im_w, im_h = load_img(PATH + filename).size
+    im = img_to_array(load_img(PATH + filename, target_size = INPUT_SHAPE))
 
-    return score
+    # Preprocesamos la imagen y añadimos una dimensión
+    im = np.expand_dims(preprocess_input(im), 0)
 
-def evaluate_gen(model, datagen, x_test, y_test):
-    """Evaluar el modelo sobre el conjunto de test, usando un generador
-       de imágenes.
-        - model: modelo a usar para evaluar.
-        - datagen: generador de imágenes.
-        - x_test, y_test: datos de test."""
+    # Realizamos la predicción
+    preds = yolo.predict(im)
 
-    score = model.evaluate_generator(datagen.flow(x_test,
-                                                  y_test,
-                                                  batch_size = 1,
-                                                  shuffle = False),
-                                      verbose = 0,
-                                      steps = len(x_test))
+    # define the anchors (determine with kmeans for new dataset)
+    anchors = [[116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]]
+    # define the probability threshold for detected objects
+    class_threshold = 0.6
+    boxes = list()
+    for i in range(len(preds)):
+    	# decode the output of the network
+    	boxes += decode_netout(preds[i][0], anchors[i], class_threshold, *INPUT_SHAPE)
 
-    return score
+    # correct the sizes of the bounding boxes for the shape of the image
+    correct_yolo_boxes(boxes, im_h, im_w, *INPUT_SHAPE)
+
+    # suppress non-maximal boxes
+    do_nms(boxes, 0.5)
+
+    # define the labels
+    labels = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck",
+        "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
+        "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe",
+        "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard",
+        "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
+        "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana",
+        "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake",
+        "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse",
+        "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator",
+        "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
+
+    # get the details of the detected objects
+    v_boxes, v_labels, v_scores = get_boxes(boxes, labels, class_threshold)
+
+    #print
+    for i in range(len(v_boxes)):
+        print(v_labels[i], v_scores[i])
+
+    # draw what we found
+    draw_boxes(PATH + filename, v_boxes, v_labels, v_scores)
+
+def face_detection():
+    """Realiza detección de caras en el conjunto de test de la base de
+       datos WIDERFACE."""
+
+    # Creamos un datagen para preprocesar y generar las imágenes
+    datagen = ImageDataGenerator(preprocessing_function = preprocess_input)
+
+    # Creamos un flujo para ir leyendo las imágenes desde directorio
+    dataflow = datagen.flow_from_directory(directory = PATH + 'test',
+                                           target_size = SHAPE,
+                                           class_mode = None,
+                                           batch_size = 1,
+                                           shuffle = False)
 
 #
 # FUNCIÓN PRINCIPAL
@@ -161,10 +146,13 @@ def evaluate_gen(model, datagen, x_test, y_test):
 def main():
     """Ejecuta el programa."""
 
-    # No mostrar warnings de TensorFlow
-    logging.set_verbosity(logging.ERROR)
-
     print("\n--- DETECCIÓN DE CARAS CON YOLOv3 ---\n")
+
+    # Cargamos el modelo YOLOv3
+    yolo = load_model('yolov3.h5')
+
+    # Realizamos la detección
+    detect_one(yolo, 'zebra.jpg')
 
 if __name__ == "__main__":
  main()

@@ -1,3 +1,5 @@
 venv
 *.weights
 *.h5
+data/*
+__pycache__
