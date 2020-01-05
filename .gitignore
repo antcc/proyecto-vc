@@ -1,5 +1,7 @@
 venv
-*.weights
-*.h5
+resources/*
 data/*
+models/*
 __pycache__
+logs/*
+.ipynb_checkpoints

@@ -31,10 +31,9 @@ from bbox import *
 # PARÁMETROS GLOBALES
 #
 
-N = 61                    # Número de clases
 TAM = (10, 5)             # Tamaño del plot
 PATH = "../data/"         # Directorio de trabajo
-INPUT_SHAPE = (416, 416)  # Tamaño de las imágenes de entrada. Debe ser múltiplo de 32.
+INPUT_SHAPE = (416, 416)  # Tamaño de las imágenes de entrada.
 
 #
 # FUNCIONES AUXILIARES
@@ -88,8 +87,10 @@ def detect_one(yolo, filename):
     # Realizamos la predicción
     preds = yolo.predict(im)
 
+    # Usar mejor get_yolo_boxes
+
     # define the anchors (determine with kmeans for new dataset)
-    anchors = [[116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]]
+    anchors = [[2,4, 4,8, 7,14], [12,23, 20,36, 35,56], [56,95, 101,149, 177,234]]
     # define the probability threshold for detected objects
     class_threshold = 0.6
     boxes = list()
@@ -104,16 +105,7 @@ def detect_one(yolo, filename):
     do_nms(boxes, 0.5)
 
     # define the labels
-    labels = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck",
-        "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
-        "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe",
-        "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard",
-        "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
-        "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana",
-        "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake",
-        "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse",
-        "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator",
-        "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
+    labels = ["face"]
 
     # get the details of the detected objects
     v_boxes, v_labels, v_scores = get_boxes(boxes, labels, class_threshold)
@@ -152,7 +144,7 @@ def main():
     yolo = load_model('yolov3.h5')
 
     # Realizamos la detección
-    detect_one(yolo, 'zebra.jpg')
+    detect_one(yolo, 'test/27--Spa/27_Spa_Spa_27_101.jpg')
 
 if __name__ == "__main__":
  main()

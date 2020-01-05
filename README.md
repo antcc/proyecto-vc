@@ -9,10 +9,11 @@ Realizado junto a [@MiguelLentisco](https://github.com/MiguelLentisco). Curso 20
 ### Código
 
 - Python 3.6.9
-- Keras 2.3.1+
-- TensorFlow 2.0.0+
+- TensorFlow 1.15+
+- Keras 2.2.5+
 - NumPy 1.18.0+
 - Matplotlib 3.1.2+
+- OpenCV 4.1.2+
 - Pillow 7.0.0+
 
 ### Documentación
