@@ -1,7 +1,7 @@
 venv
-resources/*
 data/*
 models/*
 __pycache__
 logs/*
 .ipynb_checkpoints
+*.pkl

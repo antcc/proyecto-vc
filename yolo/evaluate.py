@@ -1,11 +1,11 @@
 import numpy as np
-from utils.utils import get_yolo_boxes,
+from .utils.utils import get_yolo_boxes
 
 def evaluate_coco(model,
                  generator,
-                 iou_start = 0.5
-                 iou_step = 0.05
-                 num_iou = 10
+                 iou_start = 0.5,
+                 iou_step = 0.05,
+                 num_iou = 10,
                  obj_thresh=0.5,
                  nms_thresh=0.5,
                  net_h=416,
