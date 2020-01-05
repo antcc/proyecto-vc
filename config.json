@@ -1,21 +1,22 @@
 {
     "model" : {
-        "min_input_size":       288,
-        "max_input_size":       512,
+        "min_input_size":       320,
+        "max_input_size":       608,
+        "input_size":           512,
         "anchors":              [2,4, 4,8, 7,14, 12,23, 20,36, 35,56, 56,95, 101,149, 177,234],
         "labels":               ["face"]
     },
 
     "train": {
-        "train_image_folder":   "./tiny/train/",
-        "train_annot_folder":   "./tiny/train_annot/",
-        "cache_name":           "train_cache.pkl",
+        "train_image_folder":   "/content/drive/My Drive/yolo/train/",
+        "train_annot_folder":   "/content/drive/My Drive/yolo/train_annot/",
+        "cache_name":           "/content/drive/My Drive/yolo/train_cache.pkl",
 
         "train_times":          1,
         "batch_size":           8,
-        "learning_rate":        1e-4,
-        "nb_epochs":            1,
-        "warmup_epochs":        3,
+        "learning_rate":        1e-5,
+        "nb_epochs":            50,
+        "warmup_epochs":        4,
         "ignore_thresh":        0.5,
         "gpus":                 "0",
 
@@ -25,15 +26,16 @@
         "xywh_scale":           1,
         "class_scale":          1,
 
-        "tensorboard_dir":      "logs",
-        "saved_weights_name":   "widerface-weights.h5",
+        "tensorboard_dir":      "/content/drive/My Drive/yolo/logs/",
+        "saved_weights_name":   "/content/drive/My Drive/yolo/yolov3-wider.h5",
         "debug":                true
     },
 
     "valid": {
-        "valid_image_folder":   "./tiny/valid/",
-        "valid_annot_folder":   "./tiny/valid_annot/",
-        "cache_name":           "valid_cache.pkl",
+        "valid_image_folder":   "/content/drive/My Drive/yolo/valid/",
+        "valid_annot_folder":   "/content/drive/My Drive/yolo/valid_annot/",
+        "cache_name":           "/content/drive/My Drive/yolo/valid_cache.pkl",
+        "valid_result":         "/content/drive/My Drive/yolo/valid_eval.txt",
 
         "valid_times":          1
     }

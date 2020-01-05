@@ -14,14 +14,144 @@ def makedirs(path):
         if not os.path.isdir(path):
             raise
 
+def detect_one():
+    pass
+
+def evaluate_coco(model,
+                 generator,
+                 obj_thresh=0.5,
+                 nms_thresh=0.5,
+                 net_h=416,
+                 net_w=416,
+                 save_path=""):
+    # Avergage AP over 10 IoU threshold
+    iou_thresh_lst = np.array([0.5 + i * 0.05 for i in range(10)])
+
+    # gather all detections and annotations
+    all_detections     = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
+    all_annotations    = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
+
+    for i in range(generator.size()):
+        raw_image = [generator.load_image(i)]
+
+        # make the boxes and the labels
+        pred_boxes = get_yolo_boxes(model, raw_image, net_h, net_w, generator.get_anchors(), obj_thresh, nms_thresh)[0]
+
+        score = np.array([box.get_score() for box in pred_boxes])
+        pred_labels = np.array([box.label for box in pred_boxes])
+
+        if len(pred_boxes) > 0:
+            pred_boxes = np.array([[box.xmin, box.ymin, box.xmax, box.ymax, box.get_score()] for box in pred_boxes])
+        else:
+            pred_boxes = np.array([[]])
+
+        # sort the boxes and the labels according to scores
+        score_sort = np.argsort(-score)
+        pred_labels = pred_labels[score_sort]
+        pred_boxes  = pred_boxes[score_sort]
+
+        # copy detections to all_detections
+        for label in range(generator.num_classes()):
+            all_detections[i][label] = pred_boxes[pred_labels == label, :]
+
+        annotations = generator.load_annotation(i)
+
+        # copy detections to all_annotations
+        for label in range(generator.num_classes()):
+            all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
+
+    # compute mAP by comparing all detections and all annotations
+    average_precisions = {}
+
+    # Open file for output
+    save = len(save_path) > 0
+    f = None
+    if save:
+        f = open(save_path, "w"):
+
+    for label in range(generator.num_classes()):
+        false_positives = [np.zeros((0,)) for j in range(10)]
+        true_positives  = [np.zeros((0,)) for j in range(10)]
+        scores          = np.zeros((0,))
+        num_annotations = 0.0
+
+        for i in range(generator.size()):
+            detections           = all_detections[i][label]
+            annotations          = all_annotations[i][label]
+            num_annotations     += annotations.shape[0]
+            detected_annotations = []
+
+            if save:
+                f.write("# " + generator.img_filename(i))
+
+            for d in detections:
+                scores = np.append(scores, d[4])
+
+                if save:
+                    face = '{:.1f} {:.1f} {:.1f} {:.1f} {:.10f}'.format(d[0], d[3], d[2] - d[0], d[3] - d[1], d[4])
+                    f.write(face)
+
+                if annotations.shape[0] == 0:
+                    for j in range(10):
+                        false_positives[j] = np.append(false_positives[j], 1)
+                        true_positives[j]  = np.append(true_positives[j], 0)
+                    continue
+
+                overlaps            = compute_overlap(np.expand_dims(d, axis=0), annotations)
+                assigned_annotation = np.argmax(overlaps, axis=1)
+                max_overlap         = overlaps[0, assigned_annotation]
+
+                if assigned_annotation in detected_annotations:
+                    for j in range(10):
+                        false_positives[j] = np.append(false_positives[j], 1)
+                        true_positives[j]  = np.append(true_positives[j], 0)
+                else:
+                    for j, iou_thresh in enumerate(iou_thresh_lst):
+                        if max_overlap >= iou_thresh:
+                            false_positives[j] = np.append(false_positives[j], 0)
+                            true_positives[j]  = np.append(true_positives[j], 1)
+                        else:
+                            false_positives[j] = np.append(false_positives[j], 1)
+                            true_positives[j]  = np.append(true_positives[j], 0)
+                    if (max_overlap >= iou_thresh_lst).any():
+                        detected_annotations.append(assigned_annotation)
+
+        # no annotations -> AP for this class is 0 (is this correct?)
+        if num_annotations == 0:
+            average_precisions[label] = 0
+            continue
+
+        # sort by score
+        indices = np.argsort(-scores)
+        recall = np.zeros((10,))
+        precision = np.zeros((10,))
+        average_precision = 0
+        for j in range(10):
+            false_positives[j] = false_positives[j][indices]
+            true_positives  = true_positives[j][indices]
+
+            # compute false positives and true positives
+            false_positives[j] = np.cumsum(false_positives[j])
+            true_positives[j]  = np.cumsum(true_positives[j])
+
+            # compute recall and precision
+            recall[j]    = true_positives[j] / num_annotations
+            precision[j] = true_positives[j] / np.maximum(true_positives[j] + false_positives[j], np.finfo(np.float64).eps)
+
+            # compute average precision
+            average_precision = average_precision + compute_ap(recall[j], precision[j])
+
+        average_precisions[label] = average_precision / 10.0
+
+    return average_precisions
+
 def evaluate(model,
              generator,
              iou_threshold=0.5,
              obj_thresh=0.5,
              nms_thresh=0.5,
              net_h=416,
-             net_w=416,
-             save_path=None):
+             net_w=416):
     """ Evaluate a given dataset using a given model.
     code originally from https://github.com/fizyr/keras-retinanet
 
@@ -33,7 +163,6 @@ def evaluate(model,
         nms_thresh      : The threshold used to determine whether two detections are duplicates
         net_h           : The height of the input image to the model, higher value results in better accuracy
         net_w           : The width of the input image to the model
-        save_path       : The path to save images with visualized detections to.
     # Returns
         A dict mapping class names to mAP scores.
     """
@@ -52,7 +181,7 @@ def evaluate(model,
 
         if len(pred_boxes) > 0:
             pred_boxes = np.array([[box.xmin, box.ymin, box.xmax, box.ymax, box.get_score()] for box in pred_boxes])
-        else:
+        else:np.zeros((0,))
             pred_boxes = np.array([[]])
 
         # sort the boxes and the labels according to scores
