@@ -4,6 +4,8 @@ Utilizamos la red [YOLOv3](https://github.com/experiencor/keras-yolo3) implement
 
 Realizado junto a [@MiguelLentisco](https://github.com/MiguelLentisco). Curso 2019-20.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/antcc/proyecto-vc/blob/master/yolov3.ipynb)
+
 ## Dependencias
 
 ### Código
