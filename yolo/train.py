@@ -108,7 +108,8 @@ def create_model(
     obj_scale,
     noobj_scale,
     xywh_scale,
-    class_scale
+    class_scale,
+    backend_path
 ):
     if multi_gpu > 1:
         with tf.device('/cpu:0'):
@@ -147,7 +148,7 @@ def create_model(
         print("\nLoading pretrained weights.\n")
         template_model.load_weights(saved_weights_name)
     else:
-        template_model.load_weights("models/backend.h5", by_name=True)
+        template_model.load_weights(backend_path, by_name=True)
 
     if multi_gpu > 1:
         train_model = multi_gpu_model(template_model, gpus=multi_gpu)
