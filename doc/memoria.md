@@ -30,7 +30,7 @@ Dataset WIDERFACE [@yang2016wider].
 
 - The output of the model is, in fact, encoded candidate bounding boxes from three different grid sizes: 13x13, 26x26 y 52x52.
 
-- Explicación de mAP: https://medium.com/@jonathan_hui/map-mean-average-precision-for-object-detection-45c121a31173
+- Explicación de mAP: `https://medium.com/@jonathan_hui/map-mean-average-precision-for-object-detection-45c121a31173`
 
 PASOS SEGUIDOS:
 
