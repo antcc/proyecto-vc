@@ -84,10 +84,7 @@ def run_kmeans(ann_dims, anchor_num):
         prev_assignments = assignments.copy()
         old_distances = distances.copy()
 
-def _main_(argv):
-    config_path = args.conf
-    num_anchors = args.anchors
-
+def get_anchors(config_path, num_anchors):
     with open(config_path) as config_buffer:
         config = json.loads(config_buffer.read())
 
@@ -113,20 +110,3 @@ def _main_(argv):
     # write anchors to file
     print('\naverage IOU for', num_anchors, 'anchors:', '%0.2f' % avg_IOU(annotation_dims, centroids))
     print_anchors(centroids)
-
-if __name__ == '__main__':
-    argparser = argparse.ArgumentParser()
-
-    argparser.add_argument(
-        '-c',
-        '--conf',
-        default='config.json',
-        help='path to configuration file')
-    argparser.add_argument(
-        '-a',
-        '--anchors',
-        default=9,
-        help='number of anchors to use')
-
-    args = argparser.parse_args()
-    _main_(args)

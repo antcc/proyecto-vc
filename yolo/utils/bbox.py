@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import cv2
-from .colors import get_color
 
 class BoundBox:
     def __init__(self, xmin, ymin, xmax, ymax, c = None, classes = None):
@@ -59,34 +58,45 @@ def bbox_iou(box1, box2):
 
     return float(intersect) / union
 
-def draw_boxes(image, boxes, labels, obj_thresh, quiet=True):
+def draw_boxes_2(image, boxes, obj_thresh = 0.5, quiet=True):
     for box in boxes:
         label_str = ''
         label = -1
 
-        for i in range(len(labels)):
-            if box.classes[i] > obj_thresh:
-                if label_str != '': label_str += ', '
-                label_str += (labels[i] + ' ' + str(round(box.get_score()*100, 2)) + '%')
-                label = i
-            if not quiet: print(label_str)
+        if box.classes[0] > obj_thresh:
+            if label_str != '': label_str += ', '
+            label_str += (str(round(box.get_score()*100, 2)) + '%')
+            label = 0
+        if not quiet: print(label_str)
 
         if label >= 0:
-            text_size = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 1.1e-3 * image.shape[0], 5)
+            text_size = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.5e-3 * image.shape[0], 5)
             width, height = text_size[0][0], text_size[0][1]
             region = np.array([[box.xmin-3,        box.ymin],
                                [box.xmin-3,        box.ymin-height-26],
                                [box.xmin+width+13, box.ymin-height-26],
                                [box.xmin+width+13, box.ymin]], dtype='int32')
 
-            cv2.rectangle(img=image, pt1=(box.xmin,box.ymin), pt2=(box.xmax,box.ymax), color=get_color(label), thickness=3)
-            cv2.fillPoly(img=image, pts=[region], color=get_color(label))
+            cv2.rectangle(img=image, pt1=(box.xmin,box.ymin), pt2=(box.xmax,box.ymax), color=(0, 255, 25), thickness=3)
+            cv2.fillPoly(img=image, pts=[region], color=(0, 255, 25))
             cv2.putText(img=image,
                         text=label_str,
                         org=(box.xmin+13, box.ymin - 13),
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1e-3 * image.shape[0],
+                        fontScale=0.5e-3 * image.shape[0],
                         color=(0,0,0),
                         thickness=2)
+
+    return image
+
+def draw_boxes(image, boxes):
+    for box in boxes:
+        cv2.rectangle(image, (box.xmin,box.ymin), (box.xmax,box.ymax), (0, 255, 25), 2)
+        cv2.putText(image,
+                    str(round(box.get_score()*100, 2)) + '%',
+                    (box.xmin, box.ymin - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7e-3 * image.shape[0],
+                    (0,255,25), 2)
 
     return image

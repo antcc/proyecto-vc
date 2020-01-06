@@ -1,25 +1,52 @@
 import numpy as np
 from .utils.utils import get_yolo_boxes
 
-def evaluate_coco(model,
-                 generator,
-                 iou_start = 0.5,
-                 iou_step = 0.05,
-                 num_iou = 10,
-                 obj_thresh=0.5,
-                 nms_thresh=0.5,
-                 net_h=416,
-                 net_w=416,
-                 save_path=""):
-    # Avergage AP overmany  IoU thresholds
-    iou_thresh_lst = np.array([iou_start + i * iou_step for i in range(num_iou)])
+def evaluate_full(model,
+                  generator,
+                  obj_thresh = 0.5,
+                  nms_thresh = 0.5,
+                  net_h = 416,
+                  net_w = 416,
+                  save_path = ""):
+    # Predict boxes
+    all_detections, all_annotations = predict_boxes(model,
+                                                    generator,
+                                                    obj_thresh,
+                                                    nms_thresh,
+                                                    net_h,
+                                                    net_w,
+                                                    save_path)
+
+    # Compute mAP
+    return evaluate_coco(model,
+                         generator,
+                         all_detections,
+                         all_annotations)[0]
+
+def predict_boxes(model,
+                  generator,
+                  obj_thresh = 0.5,
+                  nms_thresh = 0.5,
+                  net_h = 416,
+                  net_w = 416,
+                  save_path = ""):
 
     # gather all detections and annotations
     all_detections     = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
     all_annotations    = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
 
+    # Open file for output
+    save = len(save_path) > 0
+    f = None
+    if save:
+        f = open(save_path, "w")
+
     for i in range(generator.size()):
         raw_image = [generator.load_image(i)]
+
+        # Write image name to file
+        if save:
+            f.write("# " + generator.img_filename(i) + "\n")
 
         # make the boxes and the labels
         pred_boxes = get_yolo_boxes(model, raw_image, net_h, net_w, generator.get_anchors(), obj_thresh, nms_thresh)[0]
@@ -41,20 +68,32 @@ def evaluate_coco(model,
         for label in range(generator.num_classes()):
             all_detections[i][label] = pred_boxes[pred_labels == label, :]
 
+            # Write detection to file
+            if save:
+                for d in all_detections[i][label]:
+                    face_str = '{:.1f} {:.1f} {:.1f} {:.1f} {:f}\n'.format(d[0], d[1], d[2] - d[0], d[3] - d[1], d[4])
+                    f.write(face_str)
+
         annotations = generator.load_annotation(i)
 
         # copy detections to all_annotations
         for label in range(generator.num_classes()):
             all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
 
+    return all_detections, all_annotations
+
+def evaluate_coco(model,
+                 generator,
+                 all_detections,
+                 all_annotations,
+                 iou_start = 0.5,
+                 iou_step = 0.05,
+                 num_iou = 10):
+    # Avergage AP overmany  IoU thresholds
+    iou_thresh_lst = np.array([iou_start + i * iou_step for i in range(num_iou)])
+
     # compute mAP by comparing all detections and all annotations
     average_precisions = {}
-
-    # Open file for output
-    save = len(save_path) > 0
-    f = None
-    if save:
-        f = open(save_path, "w")
 
     for label in range(generator.num_classes()):
         false_positives = [np.zeros((0,)) for j in range(num_iou)]
@@ -68,15 +107,8 @@ def evaluate_coco(model,
             num_annotations     += annotations.shape[0]
             detected_annotations = []
 
-            if save:
-                f.write("# " + generator.img_filename(i) + "\n")
-
             for d in detections:
                 scores = np.append(scores, d[4])
-
-                if save:
-                    face = '{:.1f} {:.1f} {:.1f} {:.1f} {:f}\n'.format(d[0], d[1], d[2] - d[0], d[3] - d[1], d[4])
-                    f.write(face)
 
                 if annotations.shape[0] == 0:
                     for j in range(num_iou):
@@ -129,6 +161,86 @@ def evaluate_coco(model,
             average_precision = average_precision + compute_ap(recall[j], precision[j])
 
         average_precisions[label] = average_precision / float(num_iou)
+
+    return average_precisions
+
+def evaluate_pascal(model,
+                    generator,
+                    all_detections,
+                    all_annotations,
+                    iou_threshold = 0.5):
+    """ Evaluate a given dataset using a given model.
+    code originally from https://github.com/fizyr/keras-retinanet
+
+    # Arguments
+        model           : The model to evaluate.
+        generator       : The generator that represents the dataset to evaluate.
+        iou_threshold   : The threshold used to consider when a detection is positive or negative.
+        obj_thresh      : The threshold used to distinguish between object and non-object
+        nms_thresh      : The threshold used to determine whether two detections are duplicates
+        net_h           : The height of the input image to the model, higher value results in better accuracy
+        net_w           : The width of the input image to the model
+        save_path       : The path to save images with visualized detections to.
+    # Returns
+        A dict mapping class names to mAP scores.
+    """
+
+    # compute mAP by comparing all detections and all annotations
+    average_precisions = {}
+
+    for label in range(generator.num_classes()):
+        false_positives = np.zeros((0,))
+        true_positives  = np.zeros((0,))
+        scores          = np.zeros((0,))
+        num_annotations = 0.0
+
+        for i in range(generator.size()):
+            detections           = all_detections[i][label]
+            annotations          = all_annotations[i][label]
+            num_annotations     += annotations.shape[0]
+            detected_annotations = []
+
+            for d in detections:
+                scores = np.append(scores, d[4])
+
+                if annotations.shape[0] == 0:
+                    false_positives = np.append(false_positives, 1)
+                    true_positives  = np.append(true_positives, 0)
+                    continue
+
+                overlaps            = compute_overlap(np.expand_dims(d, axis=0), annotations)
+                assigned_annotation = np.argmax(overlaps, axis=1)
+                max_overlap         = overlaps[0, assigned_annotation]
+
+                if max_overlap >= iou_threshold and assigned_annotation not in detected_annotations:
+                    false_positives = np.append(false_positives, 0)
+                    true_positives  = np.append(true_positives, 1)
+                    detected_annotations.append(assigned_annotation)
+                else:
+                    false_positives = np.append(false_positives, 1)
+                    true_positives  = np.append(true_positives, 0)
+
+        # no annotations -> AP for this class is 0 (is this correct?)
+        if num_annotations == 0:
+            average_precisions[label] = 0
+            continue
+
+        # sort by score
+        indices         = np.argsort(-scores)
+        false_positives = false_positives[indices]
+        true_positives  = true_positives[indices]
+
+        # compute false positives and true positives
+        false_positives = np.cumsum(false_positives)
+        true_positives  = np.cumsum(true_positives)
+
+        # compute recall and precision
+        recall    = true_positives / num_annotations
+        precision = true_positives / np.maximum(true_positives + false_positives, np.finfo(np.float64).eps)
+
+        # compute average precision
+        average_precision  = compute_ap(recall, precision)
+        average_precisions[label] = average_precision
 
     return average_precisions
 

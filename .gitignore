@@ -3,6 +3,7 @@ data/*
 models/*
 __pycache__
 logs/*
+test.py
 .ipynb_checkpoints
 *.pkl
 config-local.json
