@@ -110,12 +110,12 @@ def evaluate_coco(model,
 
         # sort by score
         indices = np.argsort(-scores)
-        recall = np.zeros((num_iou,))
-        precision = np.zeros((num_iou,))
+        recall = [np.zeros((0,)) for j in range(num_iou)]
+        precision = [np.zeros((0,)) for j in range(num_iou)]
         average_precision = 0.0
         for j in range(num_iou):
             false_positives[j] = false_positives[j][indices]
-            true_positives  = true_positives[j][indices]
+            true_positives[j]  = true_positives[j][indices]
 
             # compute false positives and true positives
             false_positives[j] = np.cumsum(false_positives[j])
