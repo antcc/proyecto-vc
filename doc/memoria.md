@@ -4,7 +4,7 @@ Dataset WIDERFACE [@yang2016wider].
 
 - The output of the model is, in fact, encoded candidate bounding boxes from three different grid sizes: 13x13, 26x26 y 52x52.
 
-- TODO: implementar faster nms (https://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/) 
+- TODO: implementar faster nms (https://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/)
 
 PASOS SEGUIDOS:
 
@@ -19,7 +19,8 @@ Parámetros: min-input: 288, max-input: 512
 
 loss: 19.5426 - yolo_layer_1_loss: 0.8661 - yolo_layer_2_loss: 5.1030 - yolo_layer_3_loss: 13.5735
 
-AP: 0.4739
+AP (Pascal VOC 2007): 0.4739
+mAP (COCO 2017): 
 
 **Evaluación:**
 

@@ -80,7 +80,7 @@ def create_callbacks(saved_weights_name, tensorboard_logs, model_to_save):
     reduce_on_plateau = ReduceLROnPlateau(
         monitor  = 'loss',
         factor   = 0.1,
-        patience = 2,
+        patience = 3,
         verbose  = 1,
         mode     = 'min',
         min_delta  = 0.01,

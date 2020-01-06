@@ -87,6 +87,6 @@ def draw_boxes(image, boxes, labels, obj_thresh, quiet=True):
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=1e-3 * image.shape[0],
                         color=(0,0,0),
-                        thickness=1)
+                        thickness=2)
 
     return image
