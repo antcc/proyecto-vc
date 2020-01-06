@@ -24,3 +24,9 @@ Realizado junto a [@MiguelLentisco](https://github.com/MiguelLentisco). Curso 20
 - Filtros de Pandoc: [pandoc-citeproc](https://github.com/jgm/pandoc-citeproc) + [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref)
 
 ## Resultados
+
+Hemos entrenado el modelo sobre el conjunto de entrenamiento proporcionado. La métrica de evaluación utilizada es la *mean average precission* ó *mAP* ([COCO Challenge 2017](http://cocodataset.org/#detection-eval)) sobre el conjunto de validación. Para calcular este valor se ha utilizado el servidor de evaluación disponible en la [competición de Codalab sobre WIDERFACE](https://competitions.codalab.org/competitions/20146).
+
+| Épocas de entrenamiento | mAP     |
+|:-----------------------:|:-------:|
+| 100                     | 0.3     |
