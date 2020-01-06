@@ -69,13 +69,13 @@ def evaluate_coco(model,
             detected_annotations = []
 
             if save:
-                f.write("# " + generator.img_filename(i))
+                f.write("# " + generator.img_filename(i) + "\n")
 
             for d in detections:
                 scores = np.append(scores, d[4])
 
                 if save:
-                    face = '{:.1f} {:.1f} {:.1f} {:.1f} {:.10f}'.format(d[0], d[3], d[2] - d[0], d[3] - d[1], d[4])
+                    face = '{:.1f} {:.1f} {:.1f} {:.1f} {:f}\n'.format(d[0], d[3], d[2] - d[0], d[3] - d[1], d[4])
                     f.write(face)
 
                 if annotations.shape[0] == 0:

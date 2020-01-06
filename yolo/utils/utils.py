@@ -70,12 +70,12 @@ def decode_netout(netout, anchors, obj_thresh, net_h, net_w):
 
         for b in range(nb_box):
             # 4th element is objectness score
-            objectness = netout[row, col, b, 4]
+            objectness = netout[int(row)][int(col)][b][4]
 
-            if(objectness <= obj_thresh): continue
+            if(objectness <= obj_thresh).all(): continue
 
             # first 4 elements are x, y, w, and h
-            x, y, w, h = netout[row,col,b,:4]
+            x, y, w, h = netout[int(row)][int(col)][b][:4]
 
             x = (col + x) / grid_w # center position, unit: image width
             y = (row + y) / grid_h # center position, unit: image height
@@ -83,7 +83,7 @@ def decode_netout(netout, anchors, obj_thresh, net_h, net_w):
             h = anchors[2 * b + 1] * np.exp(h) / net_h # unit: image height
 
             # last elements are class probabilities
-            classes = netout[row,col,b,5:]
+            classes = netout[int(row)][col][b][5:]
 
             box = BoundBox(x-w/2, y-h/2, x+w/2, y+h/2, objectness, classes)
 
@@ -142,6 +142,9 @@ def get_yolo_boxes(model, images, net_h, net_w, anchors, obj_thresh, nms_thresh)
 
         # suppress non-maximal boxes
         do_nms(boxes, nms_thresh)
+
+        # filter out boxes with low objectness score
+        boxes = [b for b in boxes if b.get_score() >= obj_thresh]
 
         batch_boxes[i] = boxes
 

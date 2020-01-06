@@ -228,4 +228,4 @@ class BatchGenerator(Sequence):
         return cv2.imread(self.instances[i]['filename'])
 
     def img_filename(self, i):
-        return self.instances[i]['filename']
+        return self.instances[i]['rel_filename']
