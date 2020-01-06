@@ -35,7 +35,7 @@
         "valid_image_folder":   "/content/drive/My Drive/vc/data/valid/",
         "valid_annot_folder":   "/content/drive/My Drive/vc/data/valid_annot/",
         "cache_name":           "/content/drive/My Drive/vc/data/valid/valid_cache.pkl",
-        "valid_result":         "/content/drive/My Drive/vc/valid_eval.txt",
+        "valid_result":         "/content/drive/My Drive/vc/eval/valid_eval.txt",
 
         "valid_times":          1
     }

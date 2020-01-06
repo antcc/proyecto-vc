@@ -6,6 +6,8 @@ Dataset WIDERFACE [@yang2016wider].
 
 - TODO: implementar faster nms (https://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/)
 
+- TODO: arreglar llamadas a parse_voc_annotation en yolov3.ipynb
+
 PASOS SEGUIDOS:
 
 1. Convertir las anotaciones de WIDERFACE a formato VOC. Para ello se ha usado el archivo `convert.py`, adaptado de https://github.com/akofman/wider-face-pascal-voc-annotations/blob/master/convert.py
@@ -20,7 +22,7 @@ Parámetros: min-input: 288, max-input: 512
 loss: 19.5426 - yolo_layer_1_loss: 0.8661 - yolo_layer_2_loss: 5.1030 - yolo_layer_3_loss: 13.5735
 
 AP (Pascal VOC 2007): 0.4739
-mAP (COCO 2017): 
+mAP (COCO 2017):
 
 **Evaluación:**
 
