@@ -9,19 +9,23 @@ def evaluate_full(model,
                   net_w = 416,
                   save_path = ""):
     # Predict boxes
-    all_detections, all_annotations = predict_boxes(model,
-                                                    generator,
-                                                    obj_thresh,
-                                                    nms_thresh,
-                                                    net_h,
-                                                    net_w,
-                                                    save_path)
+    all_detections, all_annotations = predict_boxes(
+        model,
+        generator,
+        obj_thresh,
+        nms_thresh,
+        net_h,
+        net_w,
+        save_path)
 
     # Compute mAP
-    return evaluate_coco(model,
-                         generator,
-                         all_detections,
-                         all_annotations)[0]
+    m_ap, ap = evaluate_coco(
+        model,
+        generator,
+        all_detections,
+        all_annotations)
+
+    return m_ap[0], ap[0]
 
 def predict_boxes(model,
                   generator,
@@ -93,6 +97,7 @@ def evaluate_coco(model,
     iou_thresh_lst = np.array([iou_start + i * iou_step for i in range(num_iou)])
 
     # compute mAP by comparing all detections and all annotations
+    mean_average_precisions = {}
     average_precisions = {}
 
     for label in range(generator.num_classes()):
@@ -137,6 +142,7 @@ def evaluate_coco(model,
 
         # no annotations -> AP for this class is 0 (is this correct?)
         if num_annotations == 0:
+            mean_average_precisions[label] = 0
             average_precisions[label] = 0
             continue
 
@@ -160,9 +166,12 @@ def evaluate_coco(model,
             # compute average precision
             average_precision = average_precision + compute_ap(recall[j], precision[j])
 
-        average_precisions[label] = average_precision / float(num_iou)
+            if j == 0:
+                average_precisions[label] = average_precision
 
-    return average_precisions
+        mean_average_precisions[label] = average_precision / float(num_iou)
+
+    return mean_average_precisions, average_precisions
 
 def evaluate_pascal(model,
                     generator,
