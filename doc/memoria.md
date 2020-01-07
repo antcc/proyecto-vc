@@ -10,14 +10,15 @@ Dataset WIDERFACE [@yang2016wider].
 
 **Entrenamiento:**
 
+- Cambiar optimizador a SGD, RMSProp, Adabound(https://github.com/Luolc/AdaBound/blob/master/adabound/adabound.py) <---
 - Entrenar más épocas. <---
-- Entrenar con un valor mayor de *coord_scale* en el config. Por ejemplo 4? <---
+- Entrenar con un valor mayor de *xywh_scale* en el config. Por ejemplo 3? <---
 - Entrenar con un mayor tamaño de entrada de las imágenes. Ahora mismo en Colab no es viable.
-- Aumentar el umbral *ignore_thresh*, por ejemplo a 0.6.
+- Aumentar el umbral *ignore_thresh*, por ejemplo a 0.6 ó 0.7.
 
 **Evaluación:**
 
-- Aumentar tamaño de entrada (no sé si es viable en Colab) <---
+- Aumentar tamaño de entrada (no sé si tiene sentido que supere al input_size de entrenamiento) <---
 - Aumentar umbral supresión de no máximos, por ejemplo a 0.6
 
 **Opcionales:**
