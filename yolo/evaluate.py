@@ -306,7 +306,7 @@ def compute_ap(recall, precision):
     # and sum (\Delta recall) * prec
     ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
 
-    #another way: interpolating r in {0,0.1,...,1}
-    # ap = 1/11. * np.sum_{r=0,0.1,...,1}(mpre[r])
-    
+    #another way: interpolating r in {0,0.01,0.02,...,1}
+    # ap = 1/101. * np.sum_{r=0,0.01,...,1} (mpre[r])
+
     return ap
