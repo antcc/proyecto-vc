@@ -27,7 +27,7 @@
         "class_scale":          1,
 
         "tensorboard_dir":      "/content/drive/My Drive/vc/logs/",
-        "saved_weights_name":   "/content/drive/My Drive/vc/models/yolov3-wider.h5",
+        "saved_weights_name":   "/content/drive/My Drive/vc/models/yolov3-wider-ig07-xywh3.h5",
         "debug":                true
     },
 
@@ -36,6 +36,8 @@
         "valid_annot_folder":   "/content/drive/My Drive/vc/data/valid_annot/",
         "cache_name":           "/content/drive/My Drive/vc/data/valid/valid_cache.pkl",
         "valid_result":         "/content/drive/My Drive/vc/eval/valid_eval.txt",
+
+        "valid_model":          "/content/drive/My Drive/vc/models/yolov3-wider.h5",
 
         "valid_times":          1
     }
