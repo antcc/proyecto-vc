@@ -7,6 +7,8 @@ Dataset WIDERFACE [@yang2016wider].
 **Varios:**
 
 - Entender todo el código. Eliminar lo que no sea necesario.
+- Adaptar código para poder evaluar el conjunto de test (a partir de filelist, sin anotaciones)
+- Ver por qué no coincide la métrica de evaluación de `evaluate_coco` con la de `codalab`. Reimplementar para que coincidan.
 
 **Entrenamiento:**
 
@@ -22,8 +24,6 @@ Dataset WIDERFACE [@yang2016wider].
 - Aumentar umbral supresión de no máximos, por ejemplo a 0.6
 
 **Opcionales:**
-
-- Ver por qué no coincide la métrica de evaluación de `evaluate_coco` con la de `codalab`. Reimplementar para que coincidan.
 
 - Reimplementar la funcíón de supresión de no máximos en su versión vectorizada, para que sea más rápida. Adaptar implementación de https://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/
 
