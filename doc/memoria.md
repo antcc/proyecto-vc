@@ -8,7 +8,7 @@ Dataset WIDERFACE [@yang2016wider].
 
 - Entender todo el código. Eliminar lo que no sea necesario.
 - Adaptar código para poder evaluar el conjunto de test (a partir de filelist, sin anotaciones)
-- Ver por qué no coincide la métrica de evaluación de `evaluate_coco` con la de `codalab`. Reimplementar para que coincidan.
+- Ver por qué no coincide la métrica de evaluación de `evaluate_coco` con la de `codalab`. Reimplementar para que coincidan. Posiblemente cambiar el cálculo de AP a la interpolación en 101 pasos (https://kharshit.github.io/blog/2019/09/20/evaluation-metrics-for-object-detection-and-segmentation). Si no funciona, probar con 11 pasos.
 
 **Entrenamiento:**
 
