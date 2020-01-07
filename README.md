@@ -25,8 +25,8 @@ Realizado junto a [@MiguelLentisco](https://github.com/MiguelLentisco). Curso 20
 
 ## Resultados
 
-Hemos entrenado el modelo sobre el conjunto de entrenamiento proporcionado. La métrica de evaluación utilizada es la *mean average precission* ó *mAP@.5:.05:.95* ([COCO Challenge 2017](http://cocodataset.org/#detection-eval)) sobre el conjunto de validación. Para calcular este valor se ha utilizado el servidor de evaluación disponible en la [competición de Codalab sobre WIDERFACE](https://competitions.codalab.org/competitions/20146).
+Hemos entrenado el modelo sobre el conjunto de entrenamiento proporcionado. La métrica de evaluación utilizada es la *mean average precission* ó [*mAP@.5:.05:.95*](http://cocodataset.org/#detection-eval) sobre el conjunto de validación. Para calcular este valor se ha utilizado el servidor de evaluación disponible en la [competición de Codalab sobre WIDERFACE](https://competitions.codalab.org/competitions/20146).
 
-| Épocas de entrenamiento | mAP     |
-|:-----------------------:|:-------:|
-| 100                     | 0.3     |
+| Épocas de entrenamiento | mAP     | AP@0.5  |
+|:-----------------------:|:-------:|:-------:|
+| 100                     | 0.3     | 0.4739  |
