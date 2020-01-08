@@ -1,4 +1,5 @@
 venv
+eval/*
 widerface/*
 models/*
 __pycache__
