@@ -7,14 +7,15 @@ Dataset WIDERFACE [@yang2016wider].
 **Varios:**
 
 - Entender todo el código. Eliminar lo que no sea necesario.
-- Adaptar código para poder evaluar el conjunto de test (a partir de filelist, sin anotaciones)
+- Adaptar código para poder evaluar el conjunto de test (a partir de filelist, sin anotaciones).
 - Ver por qué no coincide la métrica de evaluación de `evaluate_coco` con la de `codalab`. Reimplementar para que coincidan. Posiblemente cambiar el cálculo de AP a la interpolación en 101 pasos (https://kharshit.github.io/blog/2019/09/20/evaluation-metrics-for-object-detection-and-segmentation). Si no funciona, probar con 11 pasos.
 
 **Entrenamiento:**
 
+- Hacer finetuning a partir de los pesos de COCO iniciales (congelar unas cuantas capas, ¿cuáles?)
 - Cambiar optimizador a SGD, RMSProp, Adabound(https://github.com/Luolc/AdaBound/blob/master/adabound/adabound.py) <---
 - Entrenar más épocas. <---
-- Entrenar con un valor mayor de *xywh_scale* en el config. Por ejemplo 3? <---
+- Entrenar con un valor mayor de *xywh_scale* en el config. Por ejemplo 2? <---
 - Entrenar con un mayor tamaño de entrada de las imágenes. Ahora mismo en Colab no es viable.
 - Aumentar el umbral *ignore_thresh*, por ejemplo a 0.6 ó 0.7.
 

@@ -1,4 +1,5 @@
 venv
+yolo_arch.txt
 eval/*
 widerface/*
 models/*
