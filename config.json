@@ -2,7 +2,7 @@
     "model" : {
         "min_input_size":       288,
         "max_input_size":       512,
-        "input_size":           1024,
+        "input_size":           960,
         "anchors":              [2,4, 4,8, 7,14, 12,23, 20,36, 35,56, 56,95, 101,149, 177,234],
         "labels":               ["face"]
     },
