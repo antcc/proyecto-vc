@@ -1,5 +1,6 @@
 import numpy as np
-from .utils.utils import get_yolo_boxes
+import os
+from .utils.utils import get_yolo_boxes, makedirs
 
 def evaluate_full(model,
                   generator,
@@ -43,6 +44,9 @@ def predict_boxes(model,
     save = len(save_path) > 0
     f = None
     if save:
+        dir_path = os.path.split(save_path)[0] + "/"
+        if not os.path.isdir(dir_path):
+            makedirs(dir_path)
         f = open(save_path, "w")
 
     for i in range(generator.size()):
