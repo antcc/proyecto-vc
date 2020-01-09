@@ -109,7 +109,8 @@ def create_model(
     noobj_scale,
     xywh_scale,
     class_scale,
-    backend_path
+    backend_path,
+    fine_tune = False
 ):
     if multi_gpu > 1:
         with tf.device('/cpu:0'):
@@ -154,6 +155,11 @@ def create_model(
         train_model = multi_gpu_model(template_model, gpus=multi_gpu)
     else:
         train_model = template_model
+
+    # Fine-tuning
+    if fine_tune:
+        for layer in train_model.layers[:-10]:
+            layer.trainable = False
 
     optimizer = Adam(lr=lr, clipnorm=0.001)
     train_model.compile(loss=dummy_loss, optimizer=optimizer)

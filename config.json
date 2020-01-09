@@ -2,7 +2,7 @@
     "model" : {
         "min_input_size":       288,
         "max_input_size":       512,
-        "input_size":           960,
+        "input_size":           832,
         "anchors":              [2,4, 4,8, 7,14, 12,23, 20,36, 35,56, 56,95, 101,149, 177,234],
         "labels":               ["face"]
     },
@@ -17,17 +17,17 @@
         "learning_rate":        1e-5,
         "nb_epochs":            50,
         "warmup_epochs":        5,
-        "ignore_thresh":        0.7,
+        "ignore_thresh":        0.6,
         "gpus":                 "0",
 
         "grid_scales":          [1,1,1],
         "obj_scale":            5,
         "noobj_scale":          1,
-        "xywh_scale":           3,
+        "xywh_scale":           2,
         "class_scale":          1,
 
         "tensorboard_dir":      "/content/drive/My Drive/vc/logs/",
-        "saved_weights_name":   "/content/drive/My Drive/vc/models/yolov3-wider-ig07-xywh3.h5",
+        "saved_weights_name":   "/content/drive/My Drive/vc/models/yolov3-wider-ig06-xywh2.h5",
         "debug":                true
     },
 
@@ -37,7 +37,7 @@
         "cache_name":           "/content/drive/My Drive/vc/widerface/valid/valid_cache.pkl",
         "valid_result":         "/content/drive/My Drive/vc/eval/valid_eval.txt",
 
-        "valid_model":          "/content/drive/My Drive/vc/models/yolov3-wider.h5",
+        "valid_model":          "/content/drive/My Drive/vc/models/yolov3-wider-ig07-xywh3-50.h5",
 
         "valid_times":          1
     }
