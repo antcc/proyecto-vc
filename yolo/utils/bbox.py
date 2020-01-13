@@ -91,7 +91,7 @@ def draw_boxes_2(image, boxes, obj_thresh = 0.5, quiet=True):
 
 def draw_boxes(image, boxes, show_score = True, color = (0, 255, 0)):
     for box in boxes:
-        cv2.rectangle(image, (box.xmin,box.ymin), (box.xmax,box.ymax), color, 2)
+        cv2.rectangle(image, (box.xmin,box.ymin), (box.xmax,box.ymax), color, 3)
 
         if show_score:
             cv2.putText(image,
