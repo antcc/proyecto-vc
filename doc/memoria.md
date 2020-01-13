@@ -42,20 +42,33 @@ PASOS SEGUIDOS:
 6. Comenzar el entrenamiento en nuestro conjunto.
 7. Validar usando el servidor de Codalab (https://competitions.codalab.org/competitions/2014).
 
-*** Entrenamiento tras 100 épocas: ***
+*** Entrenamiento tras 130 épocas: ***
 
 Parámetros: min-input: 288, max-input: 512
 
-loss: 19.5426 - yolo_layer_1_loss: 0.8661 - yolo_layer_2_loss: 5.1030 - yolo_layer_3_loss: 13.5735
-AP (Pascal VOC 2007): 0.4739
-mAP (COCO 2017): 0.3
+AP (Pascal VOC 2007): ~0.68
+mAP (COCO 2017): 0.38
 
 *** Finetuning ***
 
-288,512,ig06,xywh2
+--> 288,512,ig06,xywh2
 
 - 17 épocas (early stopping) congelando todo menos las 10 últimas capas. Lr inicial de 1e-3, batch size de 12 (train_hist_finetuning). Loss: 53.42
-- 60 épocas. Todo descongelado. Batch size 8. Lr inicial 1e-4.
+- 80 épocas. Todo descongelado. Batch size 8. Lr inicial 1e-4.
+
+mAP: 0.39
+
+--> 352,512,ig07
+
+- 30 épocas congelando todo menos los 3 bloques de detección. Lr inicial de 1e-3. Bath_size de 12. Warmup epochs = 4. Loss:
+- 50 épocas con todo descongelado. Lr inicial 1e-4. Batch size de 8. Loss:
+
+Evaluación:
+
+input_size=1024, obj_thresh = 0.6, nms_thresh = 0.45
+
+mAP:
+AP:
 
 # Apéndice: Funcionamiento del código {.unnumbered}
 

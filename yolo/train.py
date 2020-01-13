@@ -64,7 +64,7 @@ def create_callbacks(saved_weights_name, tensorboard_logs, model_to_save):
     early_stop = EarlyStopping(
         monitor     = 'loss',
         min_delta   = 0.01,
-        patience    = 10,
+        patience    = 7,
         mode        = 'min',
         verbose     = 1
     )
@@ -110,7 +110,7 @@ def create_model(
     xywh_scale,
     class_scale,
     backend_path,
-    fine_tune = False
+    fine_tune = 0
 ):
     if multi_gpu > 1:
         with tf.device('/cpu:0'):
@@ -157,9 +157,53 @@ def create_model(
         train_model = template_model
 
     # Fine-tuning
-    if fine_tune:
-        for layer in train_model.layers[:-10]:
+    if fine_tune == 1:
+        for layer in train_model.layers:
             layer.trainable = False
+
+        # Unfreeze large detection block (small objects)
+        train_model.layers[254].trainable = True
+        train_model.layers[242].trainable = True
+        train_model.layers[237].trainable = True
+        train_model.layers[234].trainable = True
+
+        # Unfreeze medium detection block
+        train_model.layers[252].trainable = True
+        train_model.layers[241].trainable = True
+        train_model.layers[217].trainable = True
+        train_model.layers[214].trainable = True
+
+        # Unfreeze small detection block
+        train_model.layers[249].trainable = True
+        train_model.layers[240].trainable = True
+        train_model.layers[197].trainable = True
+        train_model.layers[194].trainable = True
+
+    elif fine_tune == 2:
+        for layer in train_model.layers:
+            layer.trainable = False
+
+        # Unfreeze large detection block (small objects)
+        train_model.layers[254].trainable = True
+        train_model.layers[242].trainable = True
+        train_model.layers[237].trainable = True
+        train_model.layers[234].trainable = True
+
+        # Unfreeze medium detection block
+        train_model.layers[252].trainable = True
+        train_model.layers[241].trainable = True
+        train_model.layers[217].trainable = True
+        train_model.layers[214].trainable = True
+
+    elif fine_tune == 3:
+        for layer in train_model.layers:
+            layer.trainable = False
+
+        # Unfreeze large detection block (small objects)
+        train_model.layers[254].trainable = True
+        train_model.layers[242].trainable = True
+        train_model.layers[237].trainable = True
+        train_model.layers[234].trainable = True
 
     optimizer = Adam(lr=lr, clipnorm=0.001)
     train_model.compile(loss=dummy_loss, optimizer=optimizer)
