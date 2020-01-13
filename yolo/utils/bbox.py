@@ -89,14 +89,16 @@ def draw_boxes_2(image, boxes, obj_thresh = 0.5, quiet=True):
 
     return image
 
-def draw_boxes(image, boxes):
+def draw_boxes(image, boxes, show_score = True, color = (0, 255, 0)):
     for box in boxes:
-        cv2.rectangle(image, (box.xmin,box.ymin), (box.xmax,box.ymax), (0, 255, 25), 2)
-        cv2.putText(image,
-                    str(round(box.get_score()*100, 2)) + '%',
-                    (box.xmin, box.ymin - 8),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7e-3 * image.shape[0],
-                    (0,255,25), 2)
+        cv2.rectangle(image, (box.xmin,box.ymin), (box.xmax,box.ymax), color, 2)
+
+        if show_score:
+            cv2.putText(image,
+                        str(round(box.get_score()*100, 2)) + '%',
+                        (box.xmin, box.ymin - 9),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8e-3 * image.shape[0],
+                        color, 2)
 
     return image

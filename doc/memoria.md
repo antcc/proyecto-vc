@@ -50,6 +50,13 @@ loss: 19.5426 - yolo_layer_1_loss: 0.8661 - yolo_layer_2_loss: 5.1030 - yolo_lay
 AP (Pascal VOC 2007): 0.4739
 mAP (COCO 2017): 0.3
 
+*** Finetuning ***
+
+288,512,ig06,xywh2
+
+- 17 épocas (early stopping) congelando todo menos las 10 últimas capas. Lr inicial de 1e-3, batch size de 12 (train_hist_finetuning). Loss: 53.42
+- 60 épocas. Todo descongelado. Batch size 8. Lr inicial 1e-4.
+
 # Apéndice: Funcionamiento del código {.unnumbered}
 
 <!-- Esto es una prueba de referencia al apéndice: [Apéndice A: Funcionamiento del código].-->
