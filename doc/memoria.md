@@ -132,3 +132,7 @@ AP:
 <!-- Esto es una prueba de referencia al apéndice: [Apéndice A: Funcionamiento del código].-->
 
 # Bibliografía {.unnumbered}
+
+[1](https://medium.com/analytics-vidhya/yolo-v3-theory-explained-33100f6d193)
+[2](https://pjreddie.com/media/files/papers/YOLOv3.pdf)
+[3](https://www.cyberailab.com/home/a-closer-look-at-yolov3)
