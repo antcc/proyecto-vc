@@ -2,6 +2,39 @@
 
 Dataset WIDERFACE [@yang2016wider].
 
+# YOLOv3
+
+## Descripción
+YOLOv3 ("You only look once" versión 3) es una red neuronal con arquitectura **completamente convolucional** dirigida a detección de objetos, que destaca como uno de los algoritmos de detección más rápidos que hay; si bien es cierto que hay otros con mejor tasa de precisión, YOLO nos da la ventaja en su bajo tiempo de ejecución frente a los otros algoritmos, lo cual es esencial cuando necesitamos hacer reconocimiento de objetos en **tiempo real**.
+
+## Funcionamiento general
+YOLO realiza detección en 3 escalas distintas, de manera que devuelve un tensor3D para cada escala del mismo tamaño que la escala en la que está detectando, codificando la información de cada celda: las coordenadas de la caja, la puntuación de si es un objeto  y puntuación de cada clase. Además, en cada escala se predicen 3 cajas de tamaño prefijado, por lo tanto se tiene que devuelve un tensor3D de tamaño NxNx[3x(4+1+M)], con N el tamaño de la escala y M el nº de clases a detectar.
+
+El entrenamiento se encarga de aprender la mejor caja (la que se superponga más sobre el ground truth) y de ajustar las coordenadas para la caja escogida; el tamaño de las cajas prefijadas se calcula usando un método de clustering K-medias al dataset antes de entrenar; este diseño permite que la red aprenda mejor y más rápido las coordenadas de las cajas.
+
+![Funcionamiento general](img/general.png)
+
+## Arquitectura
+Como ya hemos comentado, YOLO usa una arquitectura completamente convolucional (permitiendo que podamos pasar cualquier tamaño de imagen), con 75 capas convolucionales en total.
+
+![Arquitectura de YOLOv3](img/arquitectura.png)
+
+El modelo está comprendido en dos partes:
+
+- **Darknet-53**: es el extractor de características a distintas escalas, que se compone principalmente por 53 capas convolucionales, formada con bloques residuales (**ResNet**) que permite saltar conexiones, y con capas convolucionales con stride 2 que permiten hacer downsampling sin necesidad de usar pooling.
+
+  Además después de cada convolucional se añade una capa BatchNormalization y con activación Leaky ReLU.
+
+  ![Darknet-53](img/darknet.png)
+
+- **Detección en escalas**: como los objetos a detectar pueden aparecer de distintos tamaños y queremos detectarlos todos, tenemos un problema puesto que la red conforme es más profunda más le cuesta detectar objetos pequeños. YOLO resuelve esto usando una estructura de detección piramidal (Feature Pyuramid Network) que se encarga de detectar en 3 escalas distintas (pequeño, mediano y grande).
+
+  ![Feature Pyramid Network](img/piramide.png)
+
+  Tomando el mapa de características que produce **Darknet** se pasa a la escala grande, y se hace upsampling x2 y luego la une con concatenación con otro mapa de características de nivel menos profundo para la escala mediana; repetimos con la escala pequeña.
+
+
+
 # Cosas por hacer
 
 **Varios:**
