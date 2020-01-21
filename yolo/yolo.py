@@ -194,7 +194,7 @@ class YoloLayer(Layer):
     def compute_output_shape(self, input_shape):
         return [(None, 1)]
 
-def _conv_block(inp, convs, do_skip=True):
+def _conv_block(inp, convs, do_skip=True, finetune = False):
     x = inp
     count = 0
 
@@ -203,9 +203,10 @@ def _conv_block(inp, convs, do_skip=True):
             skip_connection = x
         count += 1
 
-        # TODO: Borrar
-
-        trainable = conv['layer_idx'] > 74
+        if finetune:
+            trainable = conv['layer_idx'] > 74
+        else:
+            trainable = True
 
         if conv['stride'] > 1: x = ZeroPadding2D(((1,0),(1,0)))(x) # unlike tensorflow darknet prefer left and top paddings
         x = Conv2D(conv['filter'],
@@ -232,7 +233,8 @@ def create_yolov3_model(
     obj_scale,
     noobj_scale,
     xywh_scale,
-    class_scale
+    class_scale,
+    finetune = False
 ):
     input_image = Input(shape=(None, None, 3)) # net_h, net_w, 3
     true_boxes  = Input(shape=(1, 1, 1, max_box_per_image, 4))
