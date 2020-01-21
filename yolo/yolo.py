@@ -202,8 +202,9 @@ def _conv_block(inp, convs, do_skip=True):
         if count == (len(convs) - 2) and do_skip:
             skip_connection = x
         count += 1
-		
-		trainable = conv['llayer_idx'] > 74
+
+        # TODO: Borrar
+		trainable = conv['layer_idx'] > 74
 
         if conv['stride'] > 1: x = ZeroPadding2D(((1,0),(1,0)))(x) # unlike tensorflow darknet prefer left and top paddings
         x = Conv2D(conv['filter'],
