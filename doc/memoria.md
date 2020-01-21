@@ -60,8 +60,17 @@ mAP: 0.39
 
 --> 352,512,ig07
 
-- 30 épocas congelando todo menos los 3 bloques de detección. Lr inicial de 1e-3. Bath_size de 12. Warmup epochs = 4. Loss:
-- 50 épocas con todo descongelado. Lr inicial 1e-4. Batch size de 8. Loss:
+- 30 épocas congelando todo menos los 3 bloques de detección. Lr inicial de 1e-3. Batch_size de 12. Warmup epochs = 4.
+Loss: 37.72
+Logs: finetuning-30
+Tiempo estimado por época: 400s
+
+- 50 épocas con todo descongelado. Lr inicial 1e-4. Batch size de 8.
+Loss: 22.2
+Logs:
+Tiempo estimado por época: 700s
+
+- ?
 
 Evaluación:
 
@@ -69,6 +78,28 @@ input_size=1024, obj_thresh = 0.6, nms_thresh = 0.45
 
 mAP:
 AP:
+
+-->416,672,ig07,xywh2
+
+- 30 épocas congelando todo menos los 3 bloques de detección. Lr inicial 1e-3. Batch_size de 8. Warmup 4
+Loss: 36
+Logs:
+tiempo estimado por época: 650s
+
+- 70 épocas todo descongelado, 416,512, bs8,lr1e-4
+Loss: 24
+Tiempo:
+evaluación
+mAP: 0.4053
+AP: 0.7155
+
+*** Modelo base ***
+
+- Cargando backend.h5 tal cual y haciendo finetune 10 épocas (para la última capa de cada bloque de detección).
+Parámetros: input 416, ig0.5, min-max 416,416, obj0.5, nms0.45, jitter 0.0, xywh1, lr 1e-3
+mAP@.5:.05:.95: 0.0181
+AP@0.5: 0.0818
+
 
 # Apéndice: Funcionamiento del código {.unnumbered}
 
