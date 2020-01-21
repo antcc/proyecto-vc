@@ -204,7 +204,8 @@ def _conv_block(inp, convs, do_skip=True):
         count += 1
 
         # TODO: Borrar
-		trainable = conv['layer_idx'] > 74
+
+        trainable = conv['layer_idx'] > 74
 
         if conv['stride'] > 1: x = ZeroPadding2D(((1,0),(1,0)))(x) # unlike tensorflow darknet prefer left and top paddings
         x = Conv2D(conv['filter'],
@@ -212,7 +213,7 @@ def _conv_block(inp, convs, do_skip=True):
                    strides=conv['stride'],
                    padding='valid' if conv['stride'] > 1 else 'same', # unlike tensorflow darknet prefer left and top paddings
                    name='conv_' + str(conv['layer_idx']),
-				   trainable=trainable,
+                   trainable = trainable,
                    use_bias=False if conv['bnorm'] else True)(x)
         if conv['bnorm']: x = BatchNormalization(epsilon=0.001, name='bnorm_' + str(conv['layer_idx']))(x)
         if conv['leaky']: x = LeakyReLU(alpha=0.1, name='leaky_' + str(conv['layer_idx']))(x)
