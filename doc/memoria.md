@@ -14,7 +14,7 @@ YOLO realiza detección en 3 escalas distintas, de manera que devuelve un tensor
 
 El entrenamiento se encarga de aprender la mejor caja (la que se superponga más sobre el ground truth) y de ajustar las coordenadas para la caja escogida y para obtener el tamaño de las cajas prefijadas se calcula usando un método de clustering K-medias al dataset antes de entrenar; este diseño permite que la red aprenda mejor y más rápido las coordenadas de las bounding box.
 
-![Funcionamiento general](img/general.png)
+![Funcionamiento general](img/general.jpg)
 
 ## Arquitectura
 Como ya hemos comentado, YOLO usa una arquitectura completamente convolucional (permitiendo que podamos pasar cualquier tamaño de imagen), con 75 capas convolucionales en total.
@@ -43,12 +43,12 @@ Veamos lo que produzca en la capa de detección en cada escala, que consiste en 
 ### Caja
 Se predicen 4 coordenadas para cada bounding box, las coordenadas x e y del centro, y la anchura y altura de la caja, denotémoslas $t_x, t_y, t_w, t_h$. Si la celda está desplazada de la esquina superior izquierda por un $(c_x, c_y)$, y siendo $p_w,p_h$ la anchura y altura de la caja prefijada, y $\sigma$ una función sigmoide, entonces las coordenadas de la caja predecidas son:
 
-$\begin{gather*}
+\begin{gather*}
 b_x = \sigma(t_x) + c_x \\
 b_y = \sigma(t_y) + c_y \\
 b_w = p_w e^{t_w} \\
 b_h = p_h e^{t_h}
-\end{gather*}$
+\end{gather*}
 
 ![](img/caja.png)
 
@@ -129,26 +129,14 @@ mAP (COCO 2017): 0.38
 
 mAP: 0.39
 
---> 352,512,ig07
+--> 416,512,ig07,xywh2
 
-- 30 épocas congelando todo menos los 3 bloques de detección. Lr inicial de 1e-3. Batch_size de 12. Warmup epochs = 4.
-Loss: 37.72
+
+- 25 épocas congelando primeras 74 capas. Lr inicial de 1e-3. Batch_size de 8. Warmup epochs = 3.
+Loss: 29.8
 Logs: finetuning-30
-Tiempo estimado por época: 400s
-
-- 50 épocas con todo descongelado. Lr inicial 1e-4. Batch size de 8.
-Loss: 22.2
-Logs:
-Tiempo estimado por época: 700s
-
+Tiempo estimado por época: 730s
 - ?
-
-Evaluación:
-
-input_size=1024, obj_thresh = 0.6, nms_thresh = 0.45
-
-mAP:
-AP:
 
 -->416,672,ig07,xywh2
 

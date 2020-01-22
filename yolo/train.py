@@ -127,7 +127,7 @@ def create_model(
                 noobj_scale         = noobj_scale,
                 xywh_scale          = xywh_scale,
                 class_scale         = class_scale,
-                finetune            = finetune == 4
+                finetune            = fine_tune == 4
             )
     else:
         template_model, infer_model = create_yolov3_model(
@@ -143,7 +143,7 @@ def create_model(
             noobj_scale         = noobj_scale,
             xywh_scale          = xywh_scale,
             class_scale         = class_scale,
-            finetune            = finetune == 4
+            finetune            = fine_tune == 4
         )
 
     # load the pretrained weight if exists, otherwise load the backend weight only
