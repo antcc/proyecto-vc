@@ -2,6 +2,8 @@
 
 El objetivo de este proyecto, es usar la red neuronal YOLOv3 preentrenada en la base de datos COCO, para detectar caras sobre la base de datos WIDERFACE.
 
+![Ejemplo de detección de caras](img/detecion.png)
+
 Veremos el funcionamiento y estructura general de YOLOv3, como la hemos usado y entrenado para detectar, resultados y las conclusiones.
 
 # YOLOv3
@@ -67,9 +69,17 @@ Cuando hacemos detección obtendremos muchas cajas, por lo que tendremos que fil
 
 ![](img/supresion.png)
 
-## Evaluación
+# Entrenamiento
 
+## Pesos preentrenados COCO
+Hemos obtenido los pesos de YOLOv3 después de ser entrenada en el dataset COCO. Es un dataset con más de 200.000 imágenes con objetivos etiquetados, 91 clases, con 1.5 millones de objetos; en este dataset se encuentra la clase "persona".
 
+Obviamente para la tarea de reconocer caras no es necesaria toda la información de distintos objetos que haya reconocido en COCO, pero como ha aprendido a reconocer personas de un dataset potente podemos aprovechar eso como base para nuestro detector, si bien es cierto que puede que cueste debido a que en algunas imágenes de personas en COCO no aparecen sus caras o están lejos (están centradas en personas).
+
+## Dataset objetivo WIDERFACE
+Vamos a usar el dataset WIDERFACE para entrenar y evaluar la red, el dataset de entrenamiento contiene 32.203 imágenes con 393.703 caras con bounding boxes anotadas que incluye una gran variedad conforme a la forma de las caras: en número, escala, pose, expresión, con maquillaje, distinta iluminación...
+
+Para la evaluación se usa un dataset de 10.000 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red.
 
 
 
@@ -169,6 +179,8 @@ AP@0.5: 0.0818
 Dataset WIDERFACE [@yang2016wider].
 
 
-[1](https://medium.com/analytics-vidhya/yolo-v3-theory-explained-33100f6d193)
-[2](https://pjreddie.com/media/files/papers/YOLOv3.pdf)
-[3](https://www.cyberailab.com/home/a-closer-look-at-yolov3)
+[Info YOLO 3](https://medium.com/analytics-vidhya/yolo-v3-theory-explained-33100f6d193)
+[YOLOv3 paper](https://pjreddie.com/media/files/papers/YOLOv3.pdf)
+[Info YOLO 2](https://www.cyberailab.com/home/a-closer-look-at-yolov3)
+[COCO dataset](https://arxiv.org/pdf/1405.0312.pdf)
+[WIDERFACE](http://shuoyang1213.me/WIDERFACE/)
