@@ -1,7 +1,7 @@
 {
     "model" : {
         "min_input_size":       416,
-        "max_input_size":       608,
+        "max_input_size":       512,
         "input_size":           1024,
         "anchors":              [2,4, 4,8, 7,14, 12,23, 20,36, 35,56, 56,95, 101,149, 177,234],
         "labels":               ["face"]
@@ -27,7 +27,7 @@
         "class_scale":          1,
 
         "tensorboard_dir":      "/content/drive/My Drive/vc/logs/",
-        "saved_weights_name":   "/content/drive/My Drive/vc/models/yolov3-wider-prueba.h5",
+        "saved_weights_name":   "/content/drive/My Drive/vc/models/yolov3-wider-new.h5",
         "debug":                false
     },
 
@@ -37,7 +37,7 @@
         "cache_name":           "/content/drive/My Drive/vc/widerface/valid/valid_cache.pkl",
         "valid_result":         "/content/drive/My Drive/vc/eval/valid_eval.txt",
 
-        "valid_model":          "/content/drive/My Drive/vc/models/yolov3-wider-prueba.h5",
+        "valid_model":          "/content/drive/My Drive/vc/models/yolov3-wider-100-model2.h5",
 
         "valid_times":          1
     }

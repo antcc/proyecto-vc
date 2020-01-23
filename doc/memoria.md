@@ -1,62 +1,63 @@
 # Introducción
 
-El objetivo de este proyecto, es usar la red neuronal YOLOv3 preentrenada en la base de datos COCO, para detectar caras sobre la base de datos WIDERFACE.
+El objetivo de este proyecto es usar la red neuronal YOLOv3 preentrenada en la base de datos COCO para detectar caras sobre la base de datos WIDERFACE.
 
-![Ejemplo de detección de caras](img/detecion.png)
+![Ejemplo de detección de caras](img/detecion.png){width=350px}
 
-Veremos los datasets usados, el funcionamiento y estructura general de YOLOv3, como la hemos usado y entrenado para detectar, resultados y las conclusiones.
+Veremos los *datasets* usados, el funcionamiento y estructura general de YOLOv3, cómo la hemos usado y entrenado para detectar, resultados y las conclusiones.
 
-# Datasets
+# Conjuntos de datos
 
 ## COCO
-Hemos obtenido los pesos de YOLOv3 después de ser entrenada en el dataset COCO. Es un dataset con más de 200.000 imágenes con objetivos etiquetados, 91 clases, con 1.5 millones de objetos; en este dataset se encuentra la clase "persona".
+Hemos obtenido los pesos de YOLOv3 después de ser entrenada en el dataset COCO [@coco]. Es un dataset con más de 200.000 imágenes con objetivos etiquetados, 91 clases, con 1.5 millones de objetos; en este dataset se encuentra la clase "persona".
 
-Obviamente para la tarea de reconocer caras no es necesaria toda la información de distintos objetos que haya reconocido en COCO, pero como ha aprendido a reconocer personas de un dataset potente podemos aprovechar eso como base para nuestro detector, si bien es cierto que puede que cueste debido a que en algunas imágenes de personas en COCO no aparecen sus caras o están lejos (están centradas en personas).
+Para la tarea de reconocer caras no es necesaria toda la información de distintos objetos que haya reconocido en COCO, pero como ha aprendido a reconocer personas de un dataset potente podemos aprovechar eso como base para nuestro detector, si bien es cierto que puede que cueste debido a que en algunas imágenes de personas en COCO no aparecen sus caras o están lejos (están centradas en personas).
 
 ## WIDERFACE
-Vamos a usar el dataset WIDERFACE para entrenar y evaluar la red, el dataset de entrenamiento contiene 32.203 imágenes con 393.703 caras con bounding boxes anotadas que incluye una gran variedad conforme a la forma de las caras: en número, escala, pose, expresión, con maquillaje, distinta iluminación...
+Vamos a usar el *dataset* WIDERFACE [@yang2016wider] para entrenar y evaluar la red, el *dataset* de entrenamiento contiene 12.921 imágenes con 393.703 caras con *bounding boxes* anotadas que incluye una gran variedad conforme a la forma de las caras: en número, escala, pose, expresión, con maquillaje, distinta iluminación...
 
-Para la evaluación se usa un dataset de 10.000 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red.
+Para la evaluación se proporciona un *dataset* de 16.151 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red. Sin embargo, no se liberan los valores de *ground truth* para este conjunto, y las competiciones asociadas y los servidores de evaluación están inactivos en este momento. Por lo tanto usamos el *conjunto de validación* para evaluar los resultados, que contiene 3.230 imágenes.
+
+Hay disponible un código de evaluación en la [competición de Codalab](https://competitions.codalab.org/competitions/20146#learn_the_details) asociada a este *dataset*. Es por esto que los resultados de la evaluación estarán dados en el formato que acepta este servidor de evaluación (un archivo de texto plano con todas las detecciones de todas las imágenes).
 
 # YOLOv3
 
 ## Descripción
-YOLOv3 ("You only look once" versión 3) es una red neuronal con arquitectura **completamente convolucional** dirigida a detección de objetos, que destaca como uno de los algoritmos de detección más rápidos que hay; si bien es cierto que hay otros con mejor tasa de precisión, YOLO nos da la ventaja en su bajo tiempo de ejecución frente a los otros algoritmos, lo cual es esencial cuando necesitamos hacer reconocimiento de objetos en **tiempo real**.
+YOLOv3 (*You only look once* versión 3) es una red neuronal con arquitectura **completamente convolucional** dirigida a detección de objetos, que destaca como uno de los algoritmos de detección más rápidos actualmente. Si bien es cierto que hay otros con mejor tasa de precisión, YOLO nos da la ventaja en su bajo tiempo de ejecución frente a los otros algoritmos, lo cual es esencial cuando necesitamos hacer reconocimiento de objetos en **tiempo real**.
+
+Nos basaremos en el paper original [@yolov3] para describir el funcionamiento de esta red.
 
 ## Funcionamiento general
-YOLO realiza detección en 3 escalas distintas, de manera que devuelve un tensor3D para cada escala del mismo tamaño que la escala en la que está detectando, codificando la información de cada celda: las coordenadas de la caja, la puntuación de si es un objeto (querremos que sea 1 en el centro de la bounding box y 0 en caso contrario) y puntuación de cada clase. Además, en cada escala se predicen 3 cajas de tamaño prefijado (__anchor__), por lo tanto se tiene que devuelve un tensor3D de tamaño NxNx[3x(4+1+M)], con N el tamaño de la escala y M el nº de clases a detectar.
+YOLO realiza detección en 3 escalas distintas, de manera que devuelve un tensor3D para cada escala del mismo tamaño que la escala en la que está detectando, codificando la información de cada celda: las coordenadas de la caja, la puntuación de si es un objeto (querremos que sea 1 en el centro de la bounding box y 0 en caso contrario) y puntuación de cada clase. Además, en cada escala se predicen 3 cajas a partir de la desviación que tengan con otras de tamaño prefijado (*anchor boxes*). En cada escala se devuelve como predicción un tensor3D de tamaño $N\times N \times [3 \times (4+1+M)]$, con N el tamaño de la escala y M el número de clases a detectar (en nuestro caso M=1).
 
-El entrenamiento se encarga de aprender la mejor caja (la que se superponga más sobre el ground truth) y de ajustar las coordenadas para la caja escogida y para obtener el tamaño de las cajas prefijadas se calcula usando un método de clustering K-medias al dataset antes de entrenar; este diseño permite que la red aprenda mejor y más rápido las coordenadas de las bounding box.
-
-![Funcionamiento general](img/general.jpg)
+![Funcionamiento general](img/general.jpg){width=450px}
 
 ## Arquitectura
-Como ya hemos comentado, YOLO usa una arquitectura completamente convolucional (permitiendo que podamos pasar cualquier tamaño de imagen), con 75 capas convolucionales en total.
+Como ya hemos comentado, YOLO usa una arquitectura completamente convolucional (permitiendo que podamos pasar cualquier tamaño de imagen).
 
-![Arquitectura de YOLOv3](img/arquitectura.png)
+![Arquitectura de YOLOv3](img/arquitectura.png){width=400px}
 
-El modelo está comprendido en dos partes:
+El modelo se divide en dos partes:
 
-- **Darknet-53**: es el extractor de características a distintas escalas, que se compone principalmente por 52 capas convolucionales, que incluye bloques residuales (2 convoluciones + 1 skip), y con capas convolucionales con stride 2 antes de cada bloque para hacer downsampling sin necesidad de usar pooling. Además después de cada convolucional se añade una capa BatchNormalization y con activación Leaky ReLU.
+- **Darknet-53**: es el extractor de características a distintas escalas, que se compone principalmente por 53 capas convolucionales, que incluye bloques residuales (2 convoluciones + 1 skip), y con capas convolucionales con stride 2 antes de cada bloque para hacer downsampling sin necesidad de usar pooling. Además después de cada convolucional se añade una capa BatchNormalization y con activación Leaky ReLU.
 
-  Vemos como se van incluyendo pequeños bloques con tamaño de filtros pequeño, y aumentamos ambos valores conforme profundizamos la red. Al final de cada bloque 8x (capa 36 y 61) se pasará una conexión a las escalas pequeña y mediana (lo veremos después).
+  Vemos como se van incluyendo pequeños bloques con tamaño de filtros pequeño, y aumentamos ambos valores conforme profundizamos la red. Al final de cada bloque 8x se pasará una conexión a las escalas pequeña y mediana.
 
-  ![Darknet-53](img/darknet.png)
+  ![Darknet-53](img/darknet.png){width=200px}
 
-- **Detección en escalas**: como los objetos a detectar pueden aparecer de distintos tamaños y queremos detectarlos todos, tenemos un problema puesto que la red conforme es más profunda más le cuesta detectar objetos pequeños. YOLO resuelve esto usando una estructura de detección piramidal (Feature Pyuramid Network) que se encarga de detectar en 3 escalas distintas (pequeño, mediano y grande).
+- **Detección en escalas**: como los objetos a detectar pueden aparecer de distintos tamaños y queremos detectarlos todos, tenemos un problema puesto que la red conforme es más profunda más le cuesta detectar objetos pequeños. YOLO resuelve esto usando una estructura de detección piramidal (Feature Pyramid Network) que se encarga de detectar en 3 escalas distintas (pequeña, mediana y grande), resultantes de dividir las dimensiones de la imagen de entrada entre 32, 16 y 8 respectivamente.
 
-  ![Feature Pyramid Network](img/piramide.png)
+  ![Feature Pyramid Network](img/piramide.png){width=350px}
 
-  Tomando el mapa de características que produce **Darknet** final se pasa a la escala grande directamente y a la mediana con upsampling x2; en la grande se pasa al detector, y en la mediana se concatena con otro mapa de características (capa 61) menos profundo que se pasa a la escala mediana con upsampling x2 y a la mediana directamente al detector. Finalmente repetimos el proceso para la escala pequeña usando otro mapa de características (capa 36) menos profundo todavía concatenado con lo anterior que se pasa a un detector.
+  Tomando el mapa de características que produce **Darknet** final se pasa a la escala grande directamente y a la mediana con upsampling 2x; en la grande se pasa al detector, y en la mediana se concatena con otro mapa de características (capa 61) menos profundo que se pasa a la escala mediana con upsampling 2x y a la mediana directamente al detector. Finalmente repetimos el proceso para la escala pequeña usando otro mapa de características (capa 36) menos profundo todavía concatenado con lo anterior que se pasa a un detector.
 
 ## Predicción
-Veamos lo que produzca en la capa de detección en cada escala, que consiste en una serie de valores (coordenas de la caja, puntuación de objeto, y puntuación de clase) por cada una de las 3 cajas prefijadas.
+Veamos lo que produce en la capa de detección en cada escala, que consiste en una serie de valores (coordenas de la caja, puntuación de objeto, y puntuación de clase) por cada una de las 3 cajas prefijadas.
 
-![Predicción](img/prediccion.png)
+![Predicción](img/prediccion.png){width=300px}
 
 ### Caja
-Se predicen 4 coordenadas para cada bounding box, las coordenadas x e y del centro, y la anchura y altura de la caja, denotémoslas $t_x, t_y, t_w, t_h$. Si la celda está desplazada de la esquina superior izquierda por un $(c_x, c_y)$, y siendo $p_w,p_h$ la anchura y altura de la caja prefijada, y $\sigma$ una función sigmoide, entonces las coordenadas de la caja predecidas son:
-
+Se predicen 4 coordenadas para cada *bounding box*, las coordenadas $x$ e $y$ del centro, y la anchura y altura de la caja, denotémoslas $t_x, t_y, t_w, t_h$. Si la celda está desplazada de la esquina superior izquierda por un $(c_x, c_y)$, y siendo $p_w,p_h$ la anchura y altura de la caja prefijada, y $\sigma$ una función sigmoide, entonces las coordenadas de la caja predecidas son:
 \begin{gather*}
 b_x = \sigma(t_x) + c_x \\
 b_y = \sigma(t_y) + c_y \\
@@ -64,101 +65,67 @@ b_w = p_w e^{t_w} \\
 b_h = p_h e^{t_h}
 \end{gather*}
 
-![Predicción de la caja](img/caja.png)
+![Predicción de la caja](img/caja.png){width=300px}
 
-Aunque en principio podría detectarse directamente las coordenadas, al entrenar ocasiona muchos gradientes inestables, por lo que se funciona mucho mejor prefijando una caja y aplicando transformaciones logarítmicas; en nuestro caso al tener 3 cajas fijadas obtendremos 4 coordenadas por cada caja. Para calcular las coordenadas se usa como función de perdida la suma de los errores cuadrados.
+Para calcular las coordenadas se usa como función de pérdida la suma de los errores cuadrados.
 
-Realmente estas coordenadas no son absolutas, puesto que son relativas a la esquina superior izquierda de la imagen, y además se normalizan entre la dimensión de la celda del mapa de características; por tanto si las coordenadas del centro predichas son mayores que 1 producen que se salga del centro, de ahi que usemos la función sigmoide (deja entre 0 y 1). a la altura y anchura les pasa igual, y son normalizadas por la anchura/altura de la imagen.
+Estas coordenadas se normalizan entre la dimensión de la celda del mapa de características; por tanto si las coordenadas del centro predichas son mayores que 1 producen que se salga del centro, de ahi que usemos la función sigmoide (deja entre 0 y 1). A la altura y anchura les pasa igual, y son normalizadas por el cociente anchura/altura de la imagen.
 
 ### Objeto
-La puntuación de objeto consiste en como de probable es que un objeto esté dentro de la caja, por lo que idealmente queremos es que la celda del centro de la caja sea cercana a 1, mientras que por las las zonas exteriores cercanas a la caja sea casi 0.
+La puntuación de objeto consiste en cómo de probable es que un objeto esté dentro de la caja, por lo que idealmente queremos es que la celda del centro de la caja sea cercana a 1, mientras que por las las zonas exteriores cercanas a la caja sea casi 0.
 
 ### Clase
-Cada caja predice la clase que puede tener el bounding box mediante clasificación multietiqueta, no usando softmax puesto que no influye en términos de rendimiento, pero de esta manera podemos etiquetar con varias etiquetas; así, se usa binary cross-entropy loss durante el entrenamiento.
+Cada caja predice la clase que puede tener el *bounding box* mediante clasificación logística multietiqueta, no usando *softmax* puesto que no influye en términos de rendimiento, y además de esta manera se permiten clases solapadas.
 
 ## Detección
-Cuando hacemos detección obtendremos muchas cajas, por lo que tendremos que filtrar. Primero ordenamos las cajas según su puntuación de objeto, ignoramos las que no sobrepasen un cierto umbral (por ejemplo 0.5) y finalmente aplicaremos supresión de no-máximos para condensar muchas cajas que estén casi superpuestas.
+Cuando hacemos detección obtendremos muchas cajas, por lo que tendremos que filtrarlas. Primero ordenamos las cajas según su puntuación de objeto, ignoramos las que no sobrepasen un cierto umbral y finalmente aplicamos supresión de no-máximos para condensar muchas cajas que estén superpuestas.
 
-![Ejemplo de NMS](img/supresion.png)
+![Ejemplo de NMS](img/supresion.png){width=400px}
 
 # Métricas
-
-<!-- TODO: Imágenes de @jonathan_hui -->
-<!-- https://medium.com/@jonathan_hui/map-mean-average-precision-for-object-detection-45c121a31173 -->
 
 Para evaluar los modelos usaremos la métrica __mAP__ (**mean Average Precision**). Para está metrica primero definimos las medidas de __precision__ y __recall__:
 
   - **Precision**: se mide el porcentaje de predicciones correctas, es decir, en las cajas predichas hay realmente un objeto de la clase.
-
-    Precision $= \frac{Verdaderos positivos}{Verdaderos positivos + Falsos positivos}$.
+    $$\text{Precisión} = \frac{\text{Verdaderos positivos}}{\text{Verdaderos positivos + Falsos positivos}}$$
 
   - **Recall**: se mide el pocentaje de casos positivos encontrados, es decir, la proporción de objetos detectados frente al total de objetos a detectar.
+    $$\text{\textit{Recall}} = \frac{\text{Verdaderos positivos}}{\text{Verdaderos positivos + Verdaderos negativos}}$$
 
-    Recall $= \frac{Verdaderos positivos}{Verdaderos positivos + Verdaderos negativos}$
+Para evaluar si un caja predicha es correcta, tomaremos la predicción y el *ground truth* y calculamos su __IoU__ (intersección sobre la unión), que consiste en calcular la proporción del área donde las dos cajas se intersecan frente al área de las dos cajas unidas. Diremos que la predicción es correcta si el valor __IoU__ vale más que un cierto umbral prefijado. En la Figura 9 observamos un ejemplo.
 
-Para evaluar si un caja predicha es correcta, tomaremos la predicción y el __ground truth__ y calculamos su __IoU__ (intersección sobre la unión), que consiste en calcular la proporción del area donde las dos cajas se intersectan frente al área de las dos cajas unidas. Diremos que la predicción es correcta si el valor __IoU__ vale más que un cierto umbral prefijado.
+![Ejemplo IoU](img/iou.png){width=300px}
 
-![Ejemplo IoU](img/iou.png)
+Ahora representamos la curva $p(r)$ (*precisión-recall* o PR) de la siguiente manera: ordenamos las detecciones por la probabilidad de la clase, miramos si ha sido un verdadero positivo (acierto) o un falso positivo (detecta algo incorrecto), y procedemos a calcular la precisión y el *recall* actual, obteniendo un punto de la curva. Podemos ver en la siguiente Figura 10 siguiente un ejemplo con 10 detecciones.
 
-Ahora representamos la curva PR $p(r)$ (precision-recall) de la siguiente manera: ordenamos las detecciones por la probabilidad de la clase, miramos si ha sido un verdadero positivo (acierto) o un falso positivo (detecta algo incorrecto), y procedemos a calcular la precision y el recall actual, obteniendo un punto de la curva.
+![Ejemplo con 10 detecciones](img/tabla.png){width=350px}
 
-Un ejemplo con 10 detecciones:
+Como vemos el *recall* va en aumento, ya que puede quedarse igual o crecer (o no detectamos o detectamos más), mientras que la precisión va fluctuando según acertemos con las detecciones. Veamos ahora en la Figura 11 la curva PR que tendríamos.
 
-![Ejemplo con 10 detecciones](img/tabla.png)
+![Curva PR](img/curva.png){width=350px}
 
-Como vemos el recall va en aumento, ya que puede quedarse igual o crecer (o no detectamos o detectamos más), mientras que la precision va fluctuando según acertemos con las detecciones.
+Entonces, definimos en este caso __AP__ (*Average precision*) como el area debajo de la curva PR, es decir:
+$$AP = \int^1_0 p(r)dr,$$
 
-Veamos ahora la curva PR que tendríamos:
+que toma valores en el intervalo $[0, 1]$ por tomarlo también la precisión y el *recall*.
 
-![Curva PR](img/curva.png)
+Sin embargo, para calcular la integral se toma la curva suavizando el *zigzag* que presenta, para evitar el impacto de las pequeñas variaciones; así, cambiamos el valor de la precisión de cada punto por la mayor precision que haya a la derecha del punto (es decir, la mayor precision alcanzada para *recall* mayor o igual que el actual):
+$$p_{\text{inter}}(r) = \max_{r' \geq r} p(r').$$
 
-Pues definimos __AP__ (Average precision) como el area debajo de la curva PR, es decir: $AP = \int^1_0 p(r)dr$, donde toma valores en el intervalo $[0, 1]$ por tomarlo también la precision y el recall.
+En nuestro ejemplo quedaría algo así:
 
-Sin embargo, para calcular la integral se toma la curva suavizando el "zigzag" que presenta, para evitar el impacto de las pequeñas variaciones; así, cambiamos el valor de la precision de cada punto por la mayor precision que haya a la derecha del punto (es decir, la mayor precision alcanzada para recall más o igual que el actual).
+![Curva PR interpolada](img/interpolada.png){width=350px}
 
-Es decir, $p_{inter}(r) = \max_{r' \geq r} p(r')$, en el ejemplo:
+Ahora tomamos una aproximación usando 11 valores de recall equiespaciados (también puede hacerse con 101) dados por $(0, 0,1, \dots, 1,0)$ y haciendo la media de la precisión en estos valores:
 
-![Curva PR interpolada](img/interpolada.png)
-
-Ahora tomamos una aproximación  tomando 11 valores de recall (0, 0.1, ..., 1.0) y haciendo la media de la precision en estos valores, por lo tanto $AP = \frac{1}{11} \sum_{r \in \{0, 0.1, \ldots, 1\}} p_{inter}{r_i}$-
+$$AP = \frac{1}{11} \sum_{r \in \{0, 0.1, \ldots, 1\}} p_{\text{inter}}(r_i)$$
 
 Finalmente __mAP__ se toma como la media del __AP__ obtenido para cada clase.
 
-En nuestro caso utilizaremos dos medidas: `mAP@[.5:.95]` y `mAP@0.5`:
+En nuestro caso utilizaremos dos medidas, que son las más usuales en problemas de detección actualmente: `mAP@[.5:.95]` y `mAP@0.5`:
 
   - `mAP@[.5:.95]`: es la que se usa principalmente en COCO. Consiste en hacer la media de los __mAP__ obtenidos con un umbral distinto para calcular __IoU__, empezando en 0.5 hasta 0.95 en incrementos de 0.05.
-  - `mAP@0.5`: usada en PASCAL VOC (otro dataaset muy famoso), es realizar __mAP__ calculando __IoU__ con el umbral a 0.5.
-
-<!-- TODO: explicación de pq usamos las dos, cual es preferible, aqui o despues (?) -->
-
-# Entrenamiento
-
-
-
-
-
-# Información a tener en cuenta
-
-- The output of the model is, in fact, encoded candidate bounding boxes from three different grid sizes: 13x13, 26x26 y 52x52.
-
-- Explicación de mAP: `https://medium.com/@jonathan_hui/map-mean-average-precision-for-object-detection-45c121a31173`
-
-PASOS SEGUIDOS:
-
-1. Convertir las anotaciones de WIDERFACE a formato VOC. Para ello se ha usado el archivo `convert.py`, adaptado de https://github.com/akofman/wider-face-pascal-voc-annotations/blob/master/convert.py
-4. Generar anchor boxes para nuestro conjunto usando k-means con gen-anchors.py, y ponerlos en el config.
-5. Descargar los pesos backend.h5 preentrenados en COCO.
-6. Comenzar el entrenamiento en nuestro conjunto.
-7. Validar usando el servidor de Codalab (https://competitions.codalab.org/competitions/2014).
-
-# Cosas
-
-- Cambiar optimizador a SGD, RMSprop,...
-- Métrica AP es AUC.
-
-----------
- After doing some clustering studies on ground truth labels, it turns out that most bounding boxes have certain height-width ratios. So instead of directly predicting a bounding box, YOLOv2 (and v3) predict off-sets from a predetermined set of boxes with particular height-width ratios - those predetermined set of boxes are the anchor boxes.
- -----------
+  - `mAP@0.5`: usada originalmente PASCAL VOC (otro *dataset* conocido), es realizar __mAP__ calculando __IoU__ con el umbral a 0.5.
 
 # Consideraciones previas al uso de la red
 
@@ -185,7 +152,7 @@ La primera mejora que consideramos es realizar aumento de imágenes para obtener
 
 A la hora de entrenar, las imágenes se redimensionan automáticamente cada 10 *batches* a algún tamaño comprendido entre el mínimo y el máximo que sea múltiplo de 32.
 
-También aplicamos transformaciones aleatorias de escala y recorte, cuya intensidad se controla mediante el parámetro `jitter` para el generador de imágenes de entrenamiento. Por defecto la fijamos a $0.3$.
+También aplicamos transformaciones aleatorias de escala y recorte, cuya intensidad se controla mediante el parámetro `jitter` para el generador de imágenes de entrenamiento. Por defecto la fijamos a 0.3.
 
 ## Tamaño del batch
 
@@ -193,7 +160,7 @@ Debido a las limitaciones en cuanto a la memoria disponible, nos vemos obligados
 
 ## Optimizador y learning rate
 
-Empleamos el optimizador Adam para compilar el modelo. Comenzamos a entrenar los modelos con un *learning rate* elevado de $0.001$, que es el valor por defecto de este optimizador. Disponemos de un *callback* de `ReduceLROnPlateau`, que establece un *learning rate* 10 veces menor cada vez que llevemos dos épocas sin mejorar la función de pérdida. De esta forma conseguimos acelerar la convergencia en las épocas iniciales y ajustar gradualmente los pesos conforme avanzamos en el entrenamiento.
+Empleamos el optimizador Adam para compilar el modelo. Comenzamos a entrenar los modelos con un *learning rate* elevado de 0.001, que es el valor por defecto de este optimizador. Disponemos de un *callback* de `ReduceLROnPlateau`, que establece un *learning rate* 10 veces menor cada vez que llevemos dos épocas sin mejorar la función de pérdida. De esta forma conseguimos acelerar la convergencia en las épocas iniciales y ajustar gradualmente los pesos conforme avanzamos en el entrenamiento.
 
 ## Épocas de "calentamiento"
 
@@ -203,7 +170,7 @@ El parámetro `warmup_epochs` del archivo de configuración permite especificar 
 
 Internamente la red utiliza el parámetro `ignore_thresh` del archivo de configuración para decidir qué hacer con una predicción. Si el solapamiento entre la caja predicha y el valor de *ground truth* es mayor que el umbral, dicha predicción no contribuye al error. En otro caso, sí contribuye.
 
-Si este umbral es demasiado alto, casi todas las predicciones participarán en el cálculo del error, lo que puede causar *overfitting*. Por el contrario, si este valor es demasiado bajo perderemos demasiadas contribuciones al error y podríamos causar *underfitting*. El valor por defecto es $0.5$.
+Si este umbral es demasiado alto, casi todas las predicciones participarán en el cálculo del error, lo que puede causar *overfitting*. Por el contrario, si este valor es demasiado bajo perderemos demasiadas contribuciones al error y podríamos causar *underfitting*. El valor por defecto es 0.5.
 
 ## Cálculo de la función de error
 
@@ -217,7 +184,7 @@ Disponemos de un callback de `ModelCheckpoint` que va guardando un modelo con lo
 
 Los parámetros utilizados para todas las evaluaciones son `obj_thresh = 0.5` y `nms_thresh = 0.4`. El primer parámetro se refiere al umbral a partir del cual se considera que un objeto detectado es realmente un objeto (el resto se descartan), y el segundo controla el umbral de la supresión de no máximos realizada para eliminar detecciones solapadas.
 
-Mostramos ahora los modelos finales que hemos obtenido. Hemos hecho más pruebas de las que se reflejan aquí, pero la mayoría han sido infructuosas.
+Mostramos ahora los modelos finales que hemos obtenido. Hemos hecho más pruebas de las que se reflejan aquí, pero la mayoría han sido infructuosas. En el directorio `logs` se guardan los historiales de entrenamiento para consultar gráficas con la herramienta `Tensorboard`.
 
 ## Modelo base
 
@@ -235,13 +202,14 @@ La primera prueba que hicimos fue entrenar el modelo completo partiendo de los p
 
 La evaluación para un tamaño de entrada de $416 \times 416$ fue:
 ```
-#TODO HACER!!!
+mAP@.5:.05:.95: 0.2043
+AP@0.5: 0.4675
 ```
 
-Vemos que mejora bastante al modelo base. Si evaluamos este mismo modelo con un tamaño de entrada de $1024x1024$ obtenemos una precisión bastante mayor. A cambio debemos esperar bastante más tiempo a que se realicen las detecciones en las imágenes.
+Vemos que mejora bastante al modelo base. Si evaluamos este mismo modelo con un tamaño de entrada de $1024 \times 1024$ obtenemos una precisión bastante mayor. A cambio debemos esperar bastante más tiempo a que se realicen las detecciones en las imágenes.
 ```
-AP@0.5: 0.6656
 mAP@.5:.05:.95: 0.3760
+AP@0.5: 0.6656
 ```
 
 ## Modelo 2: finetuning en los bloques de detección
@@ -252,61 +220,82 @@ Intentamos ahora realizar *finetuning* en los bloques de detección de imágenes
 
 2. Ahora descongelamos todas las capas y entrenamos el modelo durante unas 70 épocas. Volvemos a establecer los límites de entrada en 416 y 512 y el *batch size* a 8, y esta vez partimos de un *learning rate* inicial de $10^{-4}$. Obtenemos una pérdida de 24.
 
+Podemos ver la evolución de la función de pérdida durante la primera etapa de *finetuning*:
+
+![Evolución de la función de pérdida en el modelo 2.](img/loss-finetune.svg){width=400px}
+
 El resultado de la evaluación del modelo con tamaño de entrada $1024\times 1024$ es el siguiente:
 ```
-AP@0.5: 0.7255
 mAP@.5:.05:.95: 0.4053
+AP@0.5: 0.7255
 ```
 
 Vemos que supera al modelo anterior en ambas métricas, por lo que los ajustes realizados han surtido efecto.
 
 ## Modelo 3: congelar extractor de características
 
-El último intento exitoso de mejora del modelo es parecido al anterior, pero esta vez congelamos únicamente el extractor de características de la red: las 74 primeras capas.
+El último intento exitoso de mejora del modelo es parecido al anterior, pero esta vez congelamos únicamente el extractor de características de la red: las 74 primeras capas. Los parámetros fijados son los mismos.
 
-1. En la primera etapa entrenamos 25 épocas partiendo de un *learning rate* de $0.001$ y obteniendo una pérdida de 30. El tiempo estimado por época es de 730s.
+1. En la primera etapa entrenamos 25 épocas partiendo de un *learning rate* de 0.001 y obteniendo una pérdida de 30. El tiempo estimado por época es de 730s.
 
 2. A continuación entrenamos el modelo completo durante 50 épocas, llegando a una pérdida de 25.
 
 Al evaluar con tamaño de entrada $1024\times 1024$ obtenemos los siguientes resultados:
 ```
-AP@0.5: 0.7135
-mAP@.5:.05:.95: 0.3945
+mAP@.5:.05:.95: 0.3923
+AP@0.5: 0.7082
 ```
 
-Vemos que se obtiene un resultado muy similar al del modelo anterior, pero un poco por debajo. Sin embargo, este modelo ha sido entrenado durante unas 30 épocas menos.
+Vemos que se obtiene un resultado muy similar al del modelo anterior, pero un poco por debajo. Sin embargo, este modelo ha sido entrenado durante unas 30 épocas menos. En general, al emplear la técnica de *finetuning* conseguimos reducir el número de épocas y conseguir un resultado igual de bueno o incluso mejor que el obtenido al entrenar el modelo completo muchas épocas.
 
-# Índice
+# Ejemplos de detección
 
-- [x] problema a resolver
-- [x] bases de datos usadas (COCO, WIDER)
-- [x] red usada: yolov3
-- medidas de precisión (+ competición codalab)
-- ejemplos de detección y grabaciones.
+Ponemos algún ejemplo de caras detectadas con nuestro modelo. Lo que hemos observado es que consigue detectar caras muy bien cuando están bien separadas, e incluso las caras pequeñas o de perfil consigue detectarlas. Cuando hay muchas caras juntas y superpuestas (por ejemplo un grupo de personas en una foto tomada de lejos) a veces no detecta correctamente todas las caras. Sin embargo, en muchas fotos consigue detectar la mayoría con gran precisión.
 
-- Conclusiones y otras propuestas (otras redes)
-- Funcionamiento del código (explicar)
+También hemos realizado una prueba de detección en vídeo que se adjunta entre los archivos entregados con el nombre de `video_detect.mp4`. Lo que hacemos es leer el vídeo con *OpenCV* para obtener las imágenes frame a frame, aplicarles nuestro detector y después volver a construir el vídeo con los mismos FPS.
+
+En verde mostramos la caja predicha por la red y en rojo el valor real de *ground truth*. También mostramos un ejemplo con caras más pequeñas.
+
+![Detección de caras con la red entrenada](img/caras1.png){width=350px}
+
+![Detección de caras con la red entrenada](img/caras2.png){width=350px}
+
+# Conclusiones
+
+Hemos conseguido adapatar la red YOLOv3 preentranada en COCO sin conocimiento previo de los objetos de tipo "cara" para detectar correctamente estos. La precisión conseguida es bastante buena, siendo mejor la métrica `AP@0.5`. Esto no es de extrañar, pues en el propio *paper* de YOLOv3 los autores comentan que el desempeño de la red en la nueva métrica de COCO no es demasiado elevado.
+
+Podríamos haber hecho más pruebas de entrenamiento, por ejemplo cambiando el optimizador a SGD ó RMSprop. También comentamos que hemos entrenado los modelos un número quizás demasiado elevado de épocas, pues en algunas ocasiones con menos épocas el resultado seguía siendo el mismo.
+
+En general, aunque el rendimiento de esta red es bueno, existen otras redes como Faster R-CNN o RetinaNet que podrían proporcionar mejores resultados en esta tarea de detección.
 
 # Apéndice: Funcionamiento del código {.unnumbered}
 
 ## Construcción del modelo
 
+En el archivo `yolo.py` se encuentra la función `create_yolov3_model` para crear un modelo completo, utilizando la función auxiliar `_conv_block` para ir creando los bloques convolucionales. Hemos realizado algunas modificaciones que nos permitan congelar las capas del extractor de características si queremos.
+
+Además, en el archivo `voc.py` se encuentra la función `parse_voc_annotation` que nos permite leer las anotaciones de un fichero y crear las variables necesarias para describir adecuadamente cada imagen.
+
 ## Generadores de imágenes
+
+En el archivo `generator.py` se encuentran funciones para manejar un generador personalizado de imágenes. Es aquí donde se realiza el aumento de datos y se controla cómo se van generando imágenes en cada pase por la red.
 
 ## Entrenamiento
 
-## Predicción
+El archivo `train.py` junto con la función `_train` del *notebook* controlan el entrenamiento del modelo. Se comienza leyendo las anotaciones para obtener el conjunto de imágenes de entrenamiento anotadas. Después se crea un generador de imágenes con los parámetros adecuados, y a continuación se general el modelo con `create_model`. Esta función se encarga de cargar los pesos preentrenados si existen y de compilar el modelo. Después se añaden los *callbacks* deseados mediante `create_callbacks` y finalmente usamos `fit_generator` para comenzar el entrenamiento.
 
 ## Evaluación
 
+Para la métrica `AP@0.5` se dispone de código que realiza la evaluación. Hemos modificado el código para permitir simplemente crear un archivo con las cajas detectadas en todas las imágenes en el formato de la competición de Codalab, para poder comprobar la otra métrica. Esto se realiza mediante la función `pred_boxes`.
+
+Para la evaluación de la métrica está implementado el algoritmo descrito en la Sección [Métricas], con el nombre de `evaluate_pascal`. La evaluación completa se realiza mediante la función `_evaluate` del cuaderno.
+
+## Detección
+
+Se proporcionan las funciones `_detect_one` y `_detect_video` en el cuaderno para realizar detecciones en imágenes. La primera recibe como parámetro o bien la anotación de una imagen o bien la ruta de la misma. Después de leer correctamente la imagen y las anotaciones (si las hubiera), llama a la función `get_yolo_boxes`. Esta se encarga de realizar la predicción completa de cajas en la imagen: pasa la imagen por la red, decodifica el resultado mediante `decode_netout`, corrige las cajas para que se puedan representar en las dimensiones de la imagen de entrada con `correct_yolo_boxes`, y realiza supresión de no máximos con `do_nms`.
+
+Una vez detectadas las cajas, las dibujamos sobre las imágenes con la función `draw_boxes`.
+
+El procedimiento para detección en vídeo sigue la misma idea, pero se sirve de las clases `VideoCapture` y `VideoWriter` de *OpenCV* para extraer los frames del vídeo y poder realizar detecciones en ellos.
 
 # Bibliografía {.unnumbered}
-
-Dataset WIDERFACE [@yang2016wider].
-
-
-[Info YOLO 3](https://medium.com/analytics-vidhya/yolo-v3-theory-explained-33100f6d193)
-[YOLOv3 paper](https://pjreddie.com/media/files/papers/YOLOv3.pdf)
-[Info YOLO 2](https://www.cyberailab.com/home/a-closer-look-at-yolov3)
-[COCO dataset](https://arxiv.org/pdf/1405.0312.pdf)
-[WIDERFACE](http://shuoyang1213.me/WIDERFACE/)
