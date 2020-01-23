@@ -1,5 +1,5 @@
 ---
-title: "Detección de caras usando una red YOLO preentrenada"
+title: "Detección de caras usando una red YOLOv3 preentrenada"
 subtitle: Visión por Computador
 author:
   - Miguel Lentisco Ballesteros
@@ -7,6 +7,7 @@ author:
 date: Curso 2019-20
 documentclass: scrartcl
 lang: es
+fontsize: 12pt
 geometry: margin = 1.3in
 colorlinks: true
 urlcolor: Magenta

@@ -81,34 +81,6 @@ Vamos a usar el dataset WIDERFACE para entrenar y evaluar la red, el dataset de 
 
 Para la evaluación se usa un dataset de 10.000 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red.
 
-
-
-# Cosas por hacer
-
-**Varios:**
-
-- Entender todo el código. Eliminar lo que no sea necesario.
-- Adaptar código para poder evaluar el conjunto de test (a partir de filelist, sin anotaciones).
-- Ver por qué no coincide la métrica de evaluación de `evaluate_coco` con la de `codalab`. Reimplementar para que coincidan. Posiblemente cambiar el cálculo de AP a la interpolación en 101 pasos (https://kharshit.github.io/blog/2019/09/20/evaluation-metrics-for-object-detection-and-segmentation). Si no funciona, probar con 11 pasos.
-
-**Entrenamiento:**
-
-- Hacer finetuning a partir de los pesos de COCO iniciales (congelar unas cuantas capas, ¿cuáles?)
-- Cambiar optimizador a SGD, RMSProp, Adabound(https://github.com/Luolc/AdaBound/blob/master/adabound/adabound.py) <---
-- Entrenar más épocas. <---
-- Entrenar con un valor mayor de *xywh_scale* en el config. Por ejemplo 2? <---
-- Entrenar con un mayor tamaño de entrada de las imágenes. Ahora mismo en Colab no es viable.
-- Aumentar el umbral *ignore_thresh*, por ejemplo a 0.6 ó 0.7.
-
-**Evaluación:**
-
-- Aumentar tamaño de entrada (no sé si tiene sentido que supere al input_size de entrenamiento) <---
-- Aumentar umbral supresión de no máximos, por ejemplo a 0.6
-
-**Opcionales:**
-
-- Reimplementar la funcíón de supresión de no máximos en su versión vectorizada, para que sea más rápida. Adaptar implementación de https://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/
-
 # Información a tener en cuenta
 
 - The output of the model is, in fact, encoded candidate bounding boxes from three different grid sizes: 13x13, 26x26 y 52x52.
@@ -123,56 +95,154 @@ PASOS SEGUIDOS:
 6. Comenzar el entrenamiento en nuestro conjunto.
 7. Validar usando el servidor de Codalab (https://competitions.codalab.org/competitions/2014).
 
-*** Entrenamiento tras 130 épocas: ***
+# Cosas
 
-Parámetros: min-input: 288, max-input: 512
+- Cambiar optimizador a SGD, RMSprop,...
+- Métrica AP es AUC.
 
-AP (Pascal VOC 2007): ~0.68
-mAP (COCO 2017): 0.38
+----------
+ After doing some clustering studies on ground truth labels, it turns out that most bounding boxes have certain height-width ratios. So instead of directly predicting a bounding box, YOLOv2 (and v3) predict off-sets from a predetermined set of boxes with particular height-width ratios - those predetermined set of boxes are the anchor boxes.
+ -----------
 
-*** Finetuning ***
+# Consideraciones previas al uso de la red
 
---> 288,512,ig06,xywh2
+Como ya hemos comentado, utilizaremos la red YOLOv3 para realizar detección de caras en imágenes. En particular, emplearemos [esta implementación](https://github.com/experiencor/keras-yolo3) en Keras. Para tener un entorno de desarrollo adecuado se necesita hacer los siguiente.
 
-- 17 épocas (early stopping) congelando todo menos las 10 últimas capas. Lr inicial de 1e-3, batch size de 12 (train_hist_finetuning). Loss: 53.42
-- 80 épocas. Todo descongelado. Batch size 8. Lr inicial 1e-4.
+1. En primer lugar, es necesario generar las *anchor boxes* para nuestro dataset. Ya dijimos que la red YOLOv3 predice *offsets* respecto a estos valores predeterminados, por lo que si queremos entrenar la red con imágenes de nuestro nuevo conjunto debemos proporcionar estas cajas prefijadas. Para ello, utilizamos el fichero `gen_anchors.py` que simplemente aplica el algoritmo de $k$-medias en el conjunto de entrenamiento para predecir el 3 *anchor boxes* en cada escala, dadas en función del alto y del ancho. El resultado es el siguiente:
+$$[[2,4, 4,8, 7,14], [12,23, 20,36, 35,56], [56,95, 101,149, 177,234]]$$
 
-mAP: 0.39
+2. Para trabajar con las anotaciones de *ground truth* es necesario convertirlas al formato VOC que maneja la implementación proporcionada. Para ello utilizamos el script `utils/convert_annot.py`, adaptado de [este código](https://github.com/akofman/wider-face-pascal-voc-annotations/blob/master/convert.py).
 
---> 416,512,ig07,xywh2
+3. Por último, descargamos de [este enlace](https://drive.google.com/drive/folders/1pQNZ9snByUOMjvEf7Td8Zg1qvBAVhWZ8) los pesos preentrenados de la red en la base de datos COCO. Estos pesos se corresponden a todas las capas convolucionales, sin contar las capas de detección que dependen del *dataset* concreto que utilicemos.
 
+4. Editamos el archivo `config.json` para establecer la ruta de las imágenes y de las anotaciones, y creamos un cuaderno en Google Colab para las ejecuciones. Este cuaderno puede consultarse en el archivo `yolo.ipynb`. Los detalles sobre el código que contiene se pueden consultar en el [Apéndice: Funcionamiento del código].
 
-- 25 épocas congelando primeras 74 capas. Lr inicial de 1e-3. Batch_size de 8. Warmup epochs = 3.
-Loss: 29.8
-Logs: finetuning-30
-Tiempo estimado por época: 730s
-- ?
+# Aspectos de entrenamiento de la red
 
--->416,672,ig07,xywh2
+Estudiamos a continuación las consideraciones más relevantes que hemos hecho a la hora de ajustar la red a nuestro conjunto de datos. Hemos decidido entrenar la red, pues al querer detectar una clase con la que no había sido entrenada anteriormente (en COCO no existe la clase "cara") pensamos que necesitaría ser entrenada de forma profunda en el nuevo conjunto.
 
-- 30 épocas congelando todo menos los 3 bloques de detección. Lr inicial 1e-3. Batch_size de 8. Warmup 4
-Loss: 36
-Logs:
-tiempo estimado por época: 650s
+Enumeramos los principales parámetros y técnicas que contemplamos.
 
-- 70 épocas todo descongelado, 416,512, bs8,lr1e-4
-Loss: 24
-Tiempo:
-evaluación
-mAP: 0.4053
-AP: 0.7155
+## Data augmentation
 
-*** Modelo base ***
+La primera mejora que consideramos es realizar aumento de imágenes para obtener una mayor precisión en el conjunto de validación. Mediante la configuración de los parámetros `min_input_size` y `max_input_size` podemos establecer los tamaños mínimo y máximo de las imágenes, que deberán ser siempre múltiplos de 32. Por limitaciones en el entorno utilizado rara vez podremos superar tamaños de $512\times 512$ para entrenar.
 
-- Cargando backend.h5 tal cual y haciendo finetune 10 épocas (para la última capa de cada bloque de detección).
-Parámetros: input 416, ig0.5, min-max 416,416, obj0.5, nms0.45, jitter 0.0, xywh1, lr 1e-3
-mAP@.5:.05:.95: 0.0181
+A la hora de entrenar, las imágenes se redimensionan automáticamente cada 10 *batches* a algún tamaño comprendido entre el mínimo y el máximo que sea múltiplo de 32.
+
+También aplicamos transformaciones aleatorias de escala y recorte, cuya intensidad se controla mediante el parámetro `jitter` para el generador de imágenes de entrenamiento. Por defecto la fijamos a $0.3$.
+
+## Tamaño del batch
+
+Debido a las limitaciones en cuanto a la memoria disponible, nos vemos obligados a utilizar un *batch size* de 8 para las imágenes de entrenamiento. Congelando un número elevado de capas podemos llegar a un *batch size* de 12.
+
+## Optimizador y learning rate
+
+Empleamos el optimizador Adam para compilar el modelo. Comenzamos a entrenar los modelos con un *learning rate* elevado de $0.001$, que es el valor por defecto de este optimizador. Disponemos de un *callback* de `ReduceLROnPlateau`, que establece un *learning rate* 10 veces menor cada vez que llevemos dos épocas sin mejorar la función de pérdida. De esta forma conseguimos acelerar la convergencia en las épocas iniciales y ajustar gradualmente los pesos conforme avanzamos en el entrenamiento.
+
+## Épocas de "calentamiento"
+
+El parámetro `warmup_epochs` del archivo de configuración permite especificar un número de épocas iniciales en las cuales las cajas predichas por el modelo deben coincidir en tamaño con los *anchors* especificados. Lo fijamos a 3, y notamos que solo se aplica en las primeras etapas del entrenamiento.
+
+## Umbral de predicción
+
+Internamente la red utiliza el parámetro `ignore_thresh` del archivo de configuración para decidir qué hacer con una predicción. Si el solapamiento entre la caja predicha y el valor de *ground truth* es mayor que el umbral, dicha predicción no contribuye al error. En otro caso, sí contribuye.
+
+Si este umbral es demasiado alto, casi todas las predicciones participarán en el cálculo del error, lo que puede causar *overfitting*. Por el contrario, si este valor es demasiado bajo perderemos demasiadas contribuciones al error y podríamos causar *underfitting*. El valor por defecto es $0.5$.
+
+## Cálculo de la función de error
+
+Mediante los parámetros `obj_scale`, `noobj_scale`, `xywh_scale` y `class_scale` podemos fijar la escala en la que afecta cada parte al error total. El primero se refiere al error dado al predecir que algo es un objeto cuando en realidad no lo era, y el segundo a la acción contraria. El tercero controla el error en la predicción de las cajas frente a los valores reales, y el cuarto el error en la predicción de clase. Los valores por defecto son 5, 1, 1 y 1, respectivamente.
+
+## Otros callbacks
+
+Disponemos de un callback de `ModelCheckpoint` que va guardando un modelo con los mejores pesos obtenidos hasta el momento, de forma que podemos reanudar el entrenamiento por donde nos quedásemos. También tenemos un callback de `EarlyStopping` para detener el entrenamiento si no disminuye el error en 7 épocas.
+
+# Modelos entrenados y evaluación
+
+Los parámetros utilizados para todas las evaluaciones son `obj_thresh = 0.5` y `nms_thresh = 0.4`. El primer parámetro se refiere al umbral a partir del cual se considera que un objeto detectado es realmente un objeto (el resto se descartan), y el segundo controla el umbral de la supresión de no máximos realizada para eliminar detecciones solapadas.
+
+Mostramos ahora los modelos finales que hemos obtenido. Hemos hecho más pruebas de las que se reflejan aquí, pero la mayoría han sido infructuosas.
+
+## Modelo base
+
+En primer lugar generamos un modelo base con el que compararemos nuestros intentos de mejora. Se trata simplemente de un modelo con los pesos preentrenados de COCO y una capa de detección añadida en cada escala. Lo entrenamos durante 10 épocas, congelando todas las capas excepto las 3 añadidas. Utilizamos los parámetros por defecto y no realizamos *data augmentation*, y elegimos un tamaño de entrada de $416 \times 416$.
+
+Al evaluar este modelo obtenemos lo que ya esperábamos: unos resultados mediocres. Esto es normal, ya que la red no estaba entrenada originalmente para reconocer caras. Las métricas de evaluación obtenidas son:
+```
+mAP@.5:.05:.95: 0.0241
 AP@0.5: 0.0818
+```
 
+## Modelo 1: entrenamiento completo
+
+La primera prueba que hicimos fue entrenar el modelo completo partiendo de los pesos de COCO, de nuevo utilizando los parámetros por defecto. Esta vez sí empleamos aumento de datos, estableciendo los límites de las dimensiones en 288 y 512. Este modelo fue entrenado durante unas 130 épocas, a razón de unos 700 segundos por época. La pérdida fue disminuyendo hasta estancarse en un valor cercano a 19. Intentamos reiniciar el entrenamiento partiendo de un *learning rate* más elevado para escapar del óptimo local, pero este enfoque no surtió efecto.
+
+La evaluación para un tamaño de entrada de $416 \times 416$ fue:
+```
+#TODO HACER!!!
+```
+
+Vemos que mejora bastante al modelo base. Si evaluamos este mismo modelo con un tamaño de entrada de $1024x1024$ obtenemos una precisión bastante mayor. A cambio debemos esperar bastante más tiempo a que se realicen las detecciones en las imágenes.
+```
+AP@0.5: 0.6656
+mAP@.5:.05:.95: 0.3760
+```
+
+## Modelo 2: finetuning en los bloques de detección
+
+Intentamos ahora realizar *finetuning* en los bloques de detección de imágenes. Fijamos el valor de `ignore_thresh = 0.7` y aumentamos al doble la contribución al error de las diferencias entre las cajas predichas y las verdaderas, haciendo `xywh_scale = 2`. Hacemos todo esto para intentar mejorar la precisión. Ahora cargamos los pesos de COCO y dividimos el entrenamiento en dos partes:
+
+1. Congelamos toda la red excepto las 4 últimas capas de cada escala. Además, establecemos el *batch_size* a 12 y permitimos que las dimensiones de entrada fluctúen entre 416 y 672 (podemos aumentar el límite superior porque hemos congelado la mayoría de las capas). Entrenamos el modelo durante 30 épocas y nos estancamos en una pérdida alrededor de 36. El tiempo estimado por época es de 650s.
+
+2. Ahora descongelamos todas las capas y entrenamos el modelo durante unas 70 épocas. Volvemos a establecer los límites de entrada en 416 y 512 y el *batch size* a 8, y esta vez partimos de un *learning rate* inicial de $10^{-4}$. Obtenemos una pérdida de 24.
+
+El resultado de la evaluación del modelo con tamaño de entrada $1024\times 1024$ es el siguiente:
+```
+AP@0.5: 0.7255
+mAP@.5:.05:.95: 0.4053
+```
+
+Vemos que supera al modelo anterior en ambas métricas, por lo que los ajustes realizados han surtido efecto.
+
+## Modelo 3: congelar extractor de características
+
+El último intento exitoso de mejora del modelo es parecido al anterior, pero esta vez congelamos únicamente el extractor de características de la red: las 74 primeras capas.
+
+1. En la primera etapa entrenamos 25 épocas partiendo de un *learning rate* de $0.001$ y obteniendo una pérdida de 30. El tiempo estimado por época es de 730s.
+
+2. A continuación entrenamos el modelo completo durante 50 épocas, llegando a una pérdida de 25.
+
+Al evaluar con tamaño de entrada $1024\times 1024$ obtenemos los siguientes resultados:
+```
+AP@0.5: 0.7135
+mAP@.5:.05:.95: 0.3945
+```
+
+Vemos que se obtiene un resultado muy similar al del modelo anterior, pero un poco por debajo. Sin embargo, este modelo ha sido entrenado durante unas 30 épocas menos.
+
+# Índice
+
+- problema a resolver
+- bases de datos usadas (COCO, WIDER)
+- red usada: yolov3
+- medidas de precisión (+ competición codalab)
+- ejemplos de detección y grabaciones.
+
+- Conclusiones y otras propuestas (otras redes)
+- Funcionamiento del código (explicar)
 
 # Apéndice: Funcionamiento del código {.unnumbered}
 
-<!-- Esto es una prueba de referencia al apéndice: [Apéndice A: Funcionamiento del código].-->
+## Construcción del modelo
+
+## Generadores de imágenes
+
+## Entrenamiento
+
+## Predicción
+
+## Evaluación
+
 
 # Bibliografía {.unnumbered}
 
