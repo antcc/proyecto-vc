@@ -4,7 +4,19 @@ El objetivo de este proyecto, es usar la red neuronal YOLOv3 preentrenada en la 
 
 ![Ejemplo de detección de caras](img/detecion.png)
 
-Veremos el funcionamiento y estructura general de YOLOv3, como la hemos usado y entrenado para detectar, resultados y las conclusiones.
+Veremos los datasets usados, el funcionamiento y estructura general de YOLOv3, como la hemos usado y entrenado para detectar, resultados y las conclusiones.
+
+# Datasets
+
+## COCO
+Hemos obtenido los pesos de YOLOv3 después de ser entrenada en el dataset COCO. Es un dataset con más de 200.000 imágenes con objetivos etiquetados, 91 clases, con 1.5 millones de objetos; en este dataset se encuentra la clase "persona".
+
+Obviamente para la tarea de reconocer caras no es necesaria toda la información de distintos objetos que haya reconocido en COCO, pero como ha aprendido a reconocer personas de un dataset potente podemos aprovechar eso como base para nuestro detector, si bien es cierto que puede que cueste debido a que en algunas imágenes de personas en COCO no aparecen sus caras o están lejos (están centradas en personas).
+
+## WIDERFACE
+Vamos a usar el dataset WIDERFACE para entrenar y evaluar la red, el dataset de entrenamiento contiene 32.203 imágenes con 393.703 caras con bounding boxes anotadas que incluye una gran variedad conforme a la forma de las caras: en número, escala, pose, expresión, con maquillaje, distinta iluminación...
+
+Para la evaluación se usa un dataset de 10.000 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red.
 
 # YOLOv3
 
@@ -40,7 +52,7 @@ El modelo está comprendido en dos partes:
 ## Predicción
 Veamos lo que produzca en la capa de detección en cada escala, que consiste en una serie de valores (coordenas de la caja, puntuación de objeto, y puntuación de clase) por cada una de las 3 cajas prefijadas.
 
-![](img/prediccion.png)
+![Predicción](img/prediccion.png)
 
 ### Caja
 Se predicen 4 coordenadas para cada bounding box, las coordenadas x e y del centro, y la anchura y altura de la caja, denotémoslas $t_x, t_y, t_w, t_h$. Si la celda está desplazada de la esquina superior izquierda por un $(c_x, c_y)$, y siendo $p_w,p_h$ la anchura y altura de la caja prefijada, y $\sigma$ una función sigmoide, entonces las coordenadas de la caja predecidas son:
@@ -52,7 +64,7 @@ b_w = p_w e^{t_w} \\
 b_h = p_h e^{t_h}
 \end{gather*}
 
-![](img/caja.png)
+![Predicción de la caja](img/caja.png)
 
 Aunque en principio podría detectarse directamente las coordenadas, al entrenar ocasiona muchos gradientes inestables, por lo que se funciona mucho mejor prefijando una caja y aplicando transformaciones logarítmicas; en nuestro caso al tener 3 cajas fijadas obtendremos 4 coordenadas por cada caja. Para calcular las coordenadas se usa como función de perdida la suma de los errores cuadrados.
 
@@ -67,19 +79,63 @@ Cada caja predice la clase que puede tener el bounding box mediante clasificaci�
 ## Detección
 Cuando hacemos detección obtendremos muchas cajas, por lo que tendremos que filtrar. Primero ordenamos las cajas según su puntuación de objeto, ignoramos las que no sobrepasen un cierto umbral (por ejemplo 0.5) y finalmente aplicaremos supresión de no-máximos para condensar muchas cajas que estén casi superpuestas.
 
-![](img/supresion.png)
+![Ejemplo de NMS](img/supresion.png)
+
+# Métricas
+
+<!-- TODO: Imágenes de @jonathan_hui -->
+<!-- https://medium.com/@jonathan_hui/map-mean-average-precision-for-object-detection-45c121a31173 -->
+
+Para evaluar los modelos usaremos la métrica __mAP__ (**mean Average Precision**). Para está metrica primero definimos las medidas de __precision__ y __recall__:
+
+  - **Precision**: se mide el porcentaje de predicciones correctas, es decir, en las cajas predichas hay realmente un objeto de la clase.
+
+    Precision $= \frac{Verdaderos positivos}{Verdaderos positivos + Falsos positivos}$.
+
+  - **Recall**: se mide el pocentaje de casos positivos encontrados, es decir, la proporción de objetos detectados frente al total de objetos a detectar.
+
+    Recall $= \frac{Verdaderos positivos}{Verdaderos positivos + Verdaderos negativos}$
+
+Para evaluar si un caja predicha es correcta, tomaremos la predicción y el __ground truth__ y calculamos su __IoU__ (intersección sobre la unión), que consiste en calcular la proporción del area donde las dos cajas se intersectan frente al área de las dos cajas unidas. Diremos que la predicción es correcta si el valor __IoU__ vale más que un cierto umbral prefijado.
+
+![Ejemplo IoU](img/iou.png)
+
+Ahora representamos la curva PR $p(r)$ (precision-recall) de la siguiente manera: ordenamos las detecciones por la probabilidad de la clase, miramos si ha sido un verdadero positivo (acierto) o un falso positivo (detecta algo incorrecto), y procedemos a calcular la precision y el recall actual, obteniendo un punto de la curva.
+
+Un ejemplo con 10 detecciones:
+
+![Ejemplo con 10 detecciones](img/tabla.png)
+
+Como vemos el recall va en aumento, ya que puede quedarse igual o crecer (o no detectamos o detectamos más), mientras que la precision va fluctuando según acertemos con las detecciones.
+
+Veamos ahora la curva PR que tendríamos:
+
+![Curva PR](img/curva.png)
+
+Pues definimos __AP__ (Average precision) como el area debajo de la curva PR, es decir: $AP = \int^1_0 p(r)dr$, donde toma valores en el intervalo $[0, 1]$ por tomarlo también la precision y el recall.
+
+Sin embargo, para calcular la integral se toma la curva suavizando el "zigzag" que presenta, para evitar el impacto de las pequeñas variaciones; así, cambiamos el valor de la precision de cada punto por la mayor precision que haya a la derecha del punto (es decir, la mayor precision alcanzada para recall más o igual que el actual).
+
+Es decir, $p_{inter}(r) = \max_{r' \geq r} p(r')$, en el ejemplo:
+
+![Curva PR interpolada](img/interpolada.png)
+
+Ahora tomamos una aproximación  tomando 11 valores de recall (0, 0.1, ..., 1.0) y haciendo la media de la precision en estos valores, por lo tanto $AP = \frac{1}{11} \sum_{r \in \{0, 0.1, \ldots, 1\}} p_{inter}{r_i}$-
+
+Finalmente __mAP__ se toma como la media del __AP__ obtenido para cada clase.
+
+En nuestro caso utilizaremos dos medidas: `mAP@[.5:.95]` y `mAP@0.5`:
+
+  - `mAP@[.5:.95]`: es la que se usa principalmente en COCO. Consiste en hacer la media de los __mAP__ obtenidos con un umbral distinto para calcular __IoU__, empezando en 0.5 hasta 0.95 en incrementos de 0.05.
+  - `mAP@0.5`: usada en PASCAL VOC (otro dataaset muy famoso), es realizar __mAP__ calculando __IoU__ con el umbral a 0.5.
+
+<!-- TODO: explicación de pq usamos las dos, cual es preferible, aqui o despues (?) -->
 
 # Entrenamiento
 
-## Pesos preentrenados COCO
-Hemos obtenido los pesos de YOLOv3 después de ser entrenada en el dataset COCO. Es un dataset con más de 200.000 imágenes con objetivos etiquetados, 91 clases, con 1.5 millones de objetos; en este dataset se encuentra la clase "persona".
 
-Obviamente para la tarea de reconocer caras no es necesaria toda la información de distintos objetos que haya reconocido en COCO, pero como ha aprendido a reconocer personas de un dataset potente podemos aprovechar eso como base para nuestro detector, si bien es cierto que puede que cueste debido a que en algunas imágenes de personas en COCO no aparecen sus caras o están lejos (están centradas en personas).
 
-## Dataset objetivo WIDERFACE
-Vamos a usar el dataset WIDERFACE para entrenar y evaluar la red, el dataset de entrenamiento contiene 32.203 imágenes con 393.703 caras con bounding boxes anotadas que incluye una gran variedad conforme a la forma de las caras: en número, escala, pose, expresión, con maquillaje, distinta iluminación...
 
-Para la evaluación se usa un dataset de 10.000 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red.
 
 # Información a tener en cuenta
 
@@ -222,9 +278,9 @@ Vemos que se obtiene un resultado muy similar al del modelo anterior, pero un po
 
 # Índice
 
-- problema a resolver
-- bases de datos usadas (COCO, WIDER)
-- red usada: yolov3
+- [x] problema a resolver
+- [x] bases de datos usadas (COCO, WIDER)
+- [x] red usada: yolov3
 - medidas de precisión (+ competición codalab)
 - ejemplos de detección y grabaciones.
 
