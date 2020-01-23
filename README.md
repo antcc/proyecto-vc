@@ -26,7 +26,9 @@ Realizado junto a [@MiguelLentisco](https://github.com/MiguelLentisco). Curso 20
 
 Hemos entrenado el modelo sobre el conjunto de entrenamiento proporcionado. La métrica de evaluación utilizada es la *mean average precission* ó [*mAP@.5:.05:.95*](http://cocodataset.org/#detection-eval) sobre el conjunto de validación. Para calcular este valor se ha utilizado el servidor de evaluación disponible en la [competición de Codalab sobre WIDERFACE](https://competitions.codalab.org/competitions/20146).
 
-| Épocas de entrenamiento | Tamaño de entrada | mAP     | AP@0.5  |
-|:-----------------------:|:-----------------:|:-------:|:-------:|
-| 100                     | 416x416           | 0.3     | 0.4739  |
-| 130                     | 960x960           | 0.385   | 0.68    |
+| Modelo                              | Épocas de entrenamiento | Tamaño de entrada | mAP@.5:.05:.95     | mAP@0.5  |
+|:-----------------------------------:|:-----------------------:|:-----------------:|:------------------:|:--------:|
+| Entrenamiento completo              | 130                     | 416x416           | 0.3                | 0.4739   |
+| Entrenamiento completo              | 130                     | 1024x1024         | 0.385              | 0.68     |
+| Finetuning + entrenamiento completo | 75                      | 1024x1024         | 0.3923             | 0.7082   |
+| Finetuning + entrenamiento completo | 100                     | 1024x1024         | 0.4053             | 0.7255   |
