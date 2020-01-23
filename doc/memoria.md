@@ -186,7 +186,7 @@ Los parámetros utilizados para todas las evaluaciones son `obj_thresh = 0.5` y 
 
 Mostramos ahora los modelos finales que hemos obtenido. Hemos hecho más pruebas de las que se reflejan aquí, pero la mayoría han sido infructuosas. En el directorio `logs` se guardan los historiales de entrenamiento para consultar gráficas con la herramienta `Tensorboard`.
 
-Por cuestiones de espacio se adjunta únicamente el modelo que mejores resultados ha producido. En concreto, se trata de `models/yolov3-wider-100-model2.h5`.
+En [este enlace](https://drive.google.com/open?id=1OEMzoXw_RAcuEOf9HBlOb-R82_JnF-2T) a Drive se pueden descargar los modelos que hemos entrenado.
 
 ## Modelo base
 
