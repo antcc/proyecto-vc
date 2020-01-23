@@ -202,7 +202,7 @@ La primera prueba que hicimos fue entrenar el modelo completo partiendo de los p
 
 La evaluación para un tamaño de entrada de $416 \times 416$ fue:
 ```
-mAP@.5:.05:.95: 0.2043
+mAP@.5:.05:.95: 0.2565
 mAP@0.5: 0.4675
 ```
 
