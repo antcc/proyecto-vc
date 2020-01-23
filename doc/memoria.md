@@ -193,7 +193,7 @@ En primer lugar generamos un modelo base con el que compararemos nuestros intent
 Al evaluar este modelo obtenemos lo que ya esperábamos: unos resultados mediocres. Esto es normal, ya que la red no estaba entrenada originalmente para reconocer caras. Las métricas de evaluación obtenidas son:
 ```
 mAP@.5:.05:.95: 0.0241
-AP@0.5: 0.0818
+mAP@0.5: 0.0818
 ```
 
 ## Modelo 1: entrenamiento completo
@@ -203,13 +203,13 @@ La primera prueba que hicimos fue entrenar el modelo completo partiendo de los p
 La evaluación para un tamaño de entrada de $416 \times 416$ fue:
 ```
 mAP@.5:.05:.95: 0.2043
-AP@0.5: 0.4675
+mAP@0.5: 0.4675
 ```
 
 Vemos que mejora bastante al modelo base. Si evaluamos este mismo modelo con un tamaño de entrada de $1024 \times 1024$ obtenemos una precisión bastante mayor. A cambio debemos esperar bastante más tiempo a que se realicen las detecciones en las imágenes.
 ```
 mAP@.5:.05:.95: 0.3760
-AP@0.5: 0.6656
+mAP@0.5: 0.6656
 ```
 
 ## Modelo 2: finetuning en los bloques de detección
@@ -227,7 +227,7 @@ Podemos ver la evolución de la función de pérdida durante la primera etapa de
 El resultado de la evaluación del modelo con tamaño de entrada $1024\times 1024$ es el siguiente:
 ```
 mAP@.5:.05:.95: 0.4053
-AP@0.5: 0.7255
+mAP@0.5: 0.7255
 ```
 
 Vemos que supera al modelo anterior en ambas métricas, por lo que los ajustes realizados han surtido efecto.
@@ -243,7 +243,7 @@ El último intento exitoso de mejora del modelo es parecido al anterior, pero es
 Al evaluar con tamaño de entrada $1024\times 1024$ obtenemos los siguientes resultados:
 ```
 mAP@.5:.05:.95: 0.3923
-AP@0.5: 0.7082
+mAP@0.5: 0.7082
 ```
 
 Vemos que se obtiene un resultado muy similar al del modelo anterior, pero un poco por debajo. Sin embargo, este modelo ha sido entrenado durante unas 30 épocas menos. En general, al emplear la técnica de *finetuning* conseguimos reducir el número de épocas y conseguir un resultado igual de bueno o incluso mejor que el obtenido al entrenar el modelo completo muchas épocas.
