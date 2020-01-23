@@ -216,7 +216,7 @@ AP@0.5: 0.6656
 
 Intentamos ahora realizar *finetuning* en los bloques de detección de imágenes. Fijamos el valor de `ignore_thresh = 0.7` y aumentamos al doble la contribución al error de las diferencias entre las cajas predichas y las verdaderas, haciendo `xywh_scale = 2`. Hacemos todo esto para intentar mejorar la precisión. Ahora cargamos los pesos de COCO y dividimos el entrenamiento en dos partes:
 
-1. Congelamos toda la red excepto las 4 últimas capas de cada escala. Además, establecemos el *batch_size* a 12 y permitimos que las dimensiones de entrada fluctúen entre 416 y 672 (podemos aumentar el límite superior porque hemos congelado la mayoría de las capas). Entrenamos el modelo durante 30 épocas y nos estancamos en una pérdida alrededor de 36. El tiempo estimado por época es de 650s.
+1. Congelamos toda la red excepto las 4 últimas capas de cada escala. Además, establecemos el *batch_size* a 12 y permitimos que las dimensiones de entrada fluctúen entre 416 y 672 (podemos aumentar el límite superior porque hemos congelado la mayoría de las capas). Para congelar estas capas proporcionamos el parámetro `fine_tune = 1` a la función `_train`. Entrenamos el modelo durante 30 épocas y nos estancamos en una pérdida alrededor de 36. El tiempo estimado por época es de 650s.
 
 2. Ahora descongelamos todas las capas y entrenamos el modelo durante unas 70 épocas. Volvemos a establecer los límites de entrada en 416 y 512 y el *batch size* a 8, y esta vez partimos de un *learning rate* inicial de $10^{-4}$. Obtenemos una pérdida de 24.
 
@@ -234,7 +234,7 @@ Vemos que supera al modelo anterior en ambas métricas, por lo que los ajustes r
 
 ## Modelo 3: congelar extractor de características
 
-El último intento exitoso de mejora del modelo es parecido al anterior, pero esta vez congelamos únicamente el extractor de características de la red: las 74 primeras capas. Los parámetros fijados son los mismos.
+El último intento exitoso de mejora del modelo es parecido al anterior, pero esta vez congelamos únicamente el extractor de características de la red: las 74 primeras capas, proporcionando esta vez el parámetro `fine_tune = 4`. El resto de parámetros fijados son los mismos.
 
 1. En la primera etapa entrenamos 25 épocas partiendo de un *learning rate* de 0.001 y obteniendo una pérdida de 30. El tiempo estimado por época es de 730s.
 
@@ -297,5 +297,7 @@ Se proporcionan las funciones `_detect_one` y `_detect_video` en el cuaderno par
 Una vez detectadas las cajas, las dibujamos sobre las imágenes con la función `draw_boxes`.
 
 El procedimiento para detección en vídeo sigue la misma idea, pero se sirve de las clases `VideoCapture` y `VideoWriter` de *OpenCV* para extraer los frames del vídeo y poder realizar detecciones en ellos.
+
+Se proporciona también el archivo `detect.py` para realizar detecciones en local sin tener que usar el cuaderno.
 
 # Bibliografía {.unnumbered}
