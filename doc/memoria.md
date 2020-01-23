@@ -18,7 +18,7 @@ Vamos a usar el *dataset* WIDERFACE [@yang2016wider] para entrenar y evaluar la 
 
 Para la evaluación se proporciona un *dataset* de 16.151 imágenes de distribución similar al de entrenamiento pero con imágenes nuevas para comprobar el buen funcionamiento de la red. Sin embargo, no se liberan los valores de *ground truth* para este conjunto, y las competiciones asociadas y los servidores de evaluación están inactivos en este momento. Por lo tanto usamos el *conjunto de validación* para evaluar los resultados, que contiene 3.230 imágenes.
 
-Hay disponible un código de evaluación en la [competición de Codalab](https://competitions.codalab.org/competitions/20146#learn_the_details) asociada a este *dataset*. Es por esto que los resultados de la evaluación estarán dados en el formato que acepta este servidor de evaluación (un archivo de texto plano con todas las detecciones de todas las imágenes).
+Hay disponible un código de evaluación en la [competición de Codalab](https://competitions.codalab.org/competitions/20146#learn_the_details) asociada a este *dataset*. Es por esto que los resultados de la evaluación estarán dados en el formato que acepta este servidor de evaluación (un archivo de texto plano con todas las detecciones de todas las imágenes). En la carpeta `eval` se adjuntan los resultados de detección para los modelos considerados.
 
 # YOLOv3
 
@@ -131,7 +131,7 @@ En nuestro caso utilizaremos dos medidas, que son las más usuales en problemas 
 
 Como ya hemos comentado, utilizaremos la red YOLOv3 para realizar detección de caras en imágenes. En particular, emplearemos [esta implementación](https://github.com/experiencor/keras-yolo3) en Keras. Para tener un entorno de desarrollo adecuado se necesita hacer los siguiente.
 
-1. En primer lugar, es necesario generar las *anchor boxes* para nuestro dataset. Ya dijimos que la red YOLOv3 predice *offsets* respecto a estos valores predeterminados, por lo que si queremos entrenar la red con imágenes de nuestro nuevo conjunto debemos proporcionar estas cajas prefijadas. Para ello, utilizamos el fichero `gen_anchors.py` que simplemente aplica el algoritmo de $k$-medias en el conjunto de entrenamiento para predecir el 3 *anchor boxes* en cada escala, dadas en función del alto y del ancho. El resultado es el siguiente:
+1. En primer lugar, es necesario generar las *anchor boxes* para nuestro dataset. Ya dijimos que la red YOLOv3 predice *offsets* respecto a estos valores predeterminados, por lo que si queremos entrenar la red con imágenes de nuestro nuevo conjunto debemos proporcionar estas cajas prefijadas. Para ello, utilizamos el fichero `gen_anchors.py` que simplemente aplica el algoritmo de $k$-medias en el conjunto de entrenamiento para predecir 3 *anchor boxes* en cada escala, dadas en función del alto y del ancho. El resultado es el siguiente:
 $$[[2,4, 4,8, 7,14], [12,23, 20,36, 35,56], [56,95, 101,149, 177,234]]$$
 
 2. Para trabajar con las anotaciones de *ground truth* es necesario convertirlas al formato VOC que maneja la implementación proporcionada. Para ello utilizamos el script `utils/convert_annot.py`, adaptado de [este código](https://github.com/akofman/wider-face-pascal-voc-annotations/blob/master/convert.py).
@@ -185,6 +185,8 @@ Disponemos de un callback de `ModelCheckpoint` que va guardando un modelo con lo
 Los parámetros utilizados para todas las evaluaciones son `obj_thresh = 0.5` y `nms_thresh = 0.4`. El primer parámetro se refiere al umbral a partir del cual se considera que un objeto detectado es realmente un objeto (el resto se descartan), y el segundo controla el umbral de la supresión de no máximos realizada para eliminar detecciones solapadas.
 
 Mostramos ahora los modelos finales que hemos obtenido. Hemos hecho más pruebas de las que se reflejan aquí, pero la mayoría han sido infructuosas. En el directorio `logs` se guardan los historiales de entrenamiento para consultar gráficas con la herramienta `Tensorboard`.
+
+Por cuestiones de espacio se adjunta únicamente el modelo que mejores resultados ha producido. En concreto, se trata de `models/yolov3-wider-100-model2.h5`.
 
 ## Modelo base
 
