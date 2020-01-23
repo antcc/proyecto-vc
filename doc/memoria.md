@@ -262,11 +262,11 @@ En verde mostramos la caja predicha por la red y en rojo el valor real de *groun
 
 # Conclusiones
 
-Hemos conseguido adapatar la red YOLOv3 preentranada en COCO sin conocimiento previo de los objetos de tipo "cara" para detectar correctamente estos. La precisión conseguida es bastante buena, siendo mejor la métrica `AP@0.5`. Esto no es de extrañar, pues en el propio *paper* de YOLOv3 los autores comentan que el desempeño de la red en la nueva métrica de COCO no es demasiado elevado.
+Hemos conseguido adapatar la red YOLOv3 preentranada en COCO sin conocimiento previo de los objetos de tipo "cara" para detectar correctamente estos. La precisión conseguida es bastante buena, siendo mejor la métrica `AP@0.5`. Esto no es de extrañar, pues en el propio *paper* de YOLOv3 los autores comentan que el desempeño de la red en la nueva métrica de COCO no es demasiado elevado mientras que con la métrica`AP@0.5` los resultados de YOLOv3 son igual de buenos entre las mejores redes; aunque comentan que la métrica COCO hace énfasis en mejores *bounding boxes* a costa de importar menos la clasificación por lo que no es necesariamente una mejor métrica.
 
 Podríamos haber hecho más pruebas de entrenamiento, por ejemplo cambiando el optimizador a SGD ó RMSprop. También comentamos que hemos entrenado los modelos un número quizás demasiado elevado de épocas, pues en algunas ocasiones con menos épocas el resultado seguía siendo el mismo.
 
-En general, aunque el rendimiento de esta red es bueno, existen otras redes como Faster R-CNN o RetinaNet que podrían proporcionar mejores resultados en esta tarea de detección.
+En general, aunque el rendimiento de esta red es bueno, existen otras redes como Faster R-CNN o RetinaNet que podrían proporcionar mejores resultados en esta tarea de detección, sin embargo la ventaja que proporciona YOLOv3 sale a relucir cuando hay que hacer detecciones en tiempo real o hacerlas más rapidas. Para un problema real habría que considerar que si queremos detección en tiempo real YOLOv3 es de las mejores opciones, mientras que si queremos mayor precisión sin importar demasiado el tiempo, se considerarían otras redes con mayor precisión.
 
 # Apéndice: Funcionamiento del código {.unnumbered}
 
