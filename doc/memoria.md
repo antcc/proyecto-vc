@@ -222,7 +222,7 @@ Intentamos ahora realizar *finetuning* en los bloques de detección de imágenes
 
 Podemos ver la evolución de la función de pérdida durante la primera etapa de *finetuning*:
 
-![Evolución de la función de pérdida en el modelo 2.](img/loss-finetune.svg){width=400px}
+![Evolución de la función de pérdida en el modelo 2](img/loss-finetune.svg){width=400px}
 
 El resultado de la evaluación del modelo con tamaño de entrada $1024\times 1024$ es el siguiente:
 ```
@@ -262,35 +262,35 @@ En verde mostramos la caja predicha por la red y en rojo el valor real de *groun
 
 # Conclusiones
 
-Hemos conseguido adapatar la red YOLOv3 preentranada en COCO sin conocimiento previo de los objetos de tipo "cara" para detectar correctamente estos. La precisión conseguida es bastante buena, siendo mejor la métrica `AP@0.5`. Esto no es de extrañar, pues en el propio *paper* de YOLOv3 los autores comentan que el desempeño de la red en la nueva métrica de COCO no es demasiado elevado mientras que con la métrica`AP@0.5` los resultados de YOLOv3 son igual de buenos entre las mejores redes; aunque comentan que la métrica COCO hace énfasis en mejores *bounding boxes* a costa de importar menos la clasificación por lo que no es necesariamente una mejor métrica.
+Hemos conseguido adapatar la red YOLOv3 preentranada en COCO sin conocimiento previo de los objetos de tipo "cara" para detectar correctamente estos. La precisión conseguida es bastante buena, siendo mejor la métrica `AP@0.5`. Esto no es de extrañar, pues en el propio *paper* de YOLOv3 los autores comentan que el desempeño de la red en la nueva métrica de COCO no es demasiado elevado mientras que con la métrica `AP@0.5` los resultados de YOLOv3 son igual de buenos entre las mejores redes; aunque comentan que la métrica COCO hace énfasis en mejores *bounding boxes* a costa de importar menos la clasificación por lo que no es necesariamente una mejor métrica.
 
-Podríamos haber hecho más pruebas de entrenamiento, por ejemplo cambiando el optimizador a SGD ó RMSprop. También comentamos que hemos entrenado los modelos un número quizás demasiado elevado de épocas, pues en algunas ocasiones con menos épocas el resultado seguía siendo el mismo.
+Podríamos haber hecho más pruebas de entrenamiento, por ejemplo cambiando el optimizador a SGD ó RMSprop o congelando algunos otros bloques concretos de la red. También comentamos que hemos entrenado los modelos un número quizás demasiado elevado de épocas, pues en algunas ocasiones con menos épocas el resultado seguía siendo el mismo.
 
-En general, aunque el rendimiento de esta red es bueno, existen otras redes como Faster R-CNN o RetinaNet que podrían proporcionar mejores resultados en esta tarea de detección, sin embargo la ventaja que proporciona YOLOv3 sale a relucir cuando hay que hacer detecciones en tiempo real o hacerlas más rapidas. Para un problema real habría que considerar que si queremos detección en tiempo real YOLOv3 es de las mejores opciones, mientras que si queremos mayor precisión sin importar demasiado el tiempo, se considerarían otras redes con mayor precisión.
+En general, aunque el rendimiento de esta red es bueno, existen otras redes como Faster R-CNN o RetinaNet que podrían proporcionar mejores resultados en esta tarea de detección, sin embargo la ventaja que proporciona YOLOv3 sale a relucir cuando hay que hacer detecciones en tiempo real o hacerlas más rápidas. Para un problema real habría que considerar que si queremos detección en tiempo real YOLOv3 es de las mejores opciones, mientras que si queremos mayor precisión sin importar demasiado el tiempo, se considerarían otras redes con mayor precisión.
 
 # Apéndice: Funcionamiento del código {.unnumbered}
 
-## Construcción del modelo
+## Construcción del modelo {.unnumbered}
 
 En el archivo `yolo.py` se encuentra la función `create_yolov3_model` para crear un modelo completo, utilizando la función auxiliar `_conv_block` para ir creando los bloques convolucionales. Hemos realizado algunas modificaciones que nos permitan congelar las capas del extractor de características si queremos.
 
 Además, en el archivo `voc.py` se encuentra la función `parse_voc_annotation` que nos permite leer las anotaciones de un fichero y crear las variables necesarias para describir adecuadamente cada imagen.
 
-## Generadores de imágenes
+## Generadores de imágenes {.unnumbered}
 
 En el archivo `generator.py` se encuentran funciones para manejar un generador personalizado de imágenes. Es aquí donde se realiza el aumento de datos y se controla cómo se van generando imágenes en cada pase por la red.
 
-## Entrenamiento
+## Entrenamiento {.unnumbered}
 
 El archivo `train.py` junto con la función `_train` del *notebook* controlan el entrenamiento del modelo. Se comienza leyendo las anotaciones para obtener el conjunto de imágenes de entrenamiento anotadas. Después se crea un generador de imágenes con los parámetros adecuados, y a continuación se general el modelo con `create_model`. Esta función se encarga de cargar los pesos preentrenados si existen y de compilar el modelo. Después se añaden los *callbacks* deseados mediante `create_callbacks` y finalmente usamos `fit_generator` para comenzar el entrenamiento.
 
-## Evaluación
+## Evaluación {.unnumbered}
 
 Para la métrica `AP@0.5` se dispone de código que realiza la evaluación. Hemos modificado el código para permitir simplemente crear un archivo con las cajas detectadas en todas las imágenes en el formato de la competición de Codalab, para poder comprobar la otra métrica. Esto se realiza mediante la función `pred_boxes`.
 
 Para la evaluación de la métrica está implementado el algoritmo descrito en la Sección [Métricas], con el nombre de `evaluate_pascal`. La evaluación completa se realiza mediante la función `_evaluate` del cuaderno.
 
-## Detección
+## Detección {.unnumbered}
 
 Se proporcionan las funciones `_detect_one` y `_detect_video` en el cuaderno para realizar detecciones en imágenes. La primera recibe como parámetro o bien la anotación de una imagen o bien la ruta de la misma. Después de leer correctamente la imagen y las anotaciones (si las hubiera), llama a la función `get_yolo_boxes`. Esta se encarga de realizar la predicción completa de cajas en la imagen: pasa la imagen por la red, decodifica el resultado mediante `decode_netout`, corrige las cajas para que se puedan representar en las dimensiones de la imagen de entrada con `correct_yolo_boxes`, y realiza supresión de no máximos con `do_nms`.
 
